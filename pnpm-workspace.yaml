@@ -1,0 +1,7 @@
+packages:
+  - "packages/*"
+  - "examples/*"
+allowBuilds:
+  # ffmpeg-static (pulled in transitively) downloads an ffmpeg binary we do not
+  # need for the scaffold. Skip its postinstall build script.
+  ffmpeg-static: false

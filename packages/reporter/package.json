@@ -1,0 +1,22 @@
+{
+  "name": "@aee/reporter",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Builds the JSON report and a terminal summary from verdicts.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "pretest": "tsc -b",
+    "test": "node --test dist"
+  },
+  "dependencies": {
+    "@aee/core": "workspace:*"
+  }
+}

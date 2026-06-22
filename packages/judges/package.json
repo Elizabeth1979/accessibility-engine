@@ -1,0 +1,24 @@
+{
+  "name": "@aee/judges",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Per-concern judges: an axe-core deterministic floor + an AI quality judgment.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "pretest": "tsc -b",
+    "test": "node --test dist"
+  },
+  "dependencies": {
+    "@aee/core": "workspace:*",
+    "@aee/ai": "workspace:*",
+    "axe-core": "^4.11.2"
+  }
+}

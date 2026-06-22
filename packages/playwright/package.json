@@ -1,0 +1,29 @@
+{
+  "name": "@aee/playwright",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Playwright Driver + a drop-in test fixture with checkpoint(intent). The DX surface.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "pretest": "tsc -b",
+    "test": "node --test dist"
+  },
+  "dependencies": {
+    "@aee/core": "workspace:*",
+    "@aee/observers": "workspace:*"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.40.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}

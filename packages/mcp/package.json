@@ -1,0 +1,26 @@
+{
+  "name": "@aee/mcp",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Agent-native surface: an MCP server exposing AEE investigations, evidence, explanations, and fixes.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "pretest": "tsc -b",
+    "test": "node --test dist"
+  },
+  "dependencies": {
+    "@aee/core": "workspace:*",
+    "@aee/ai": "workspace:*",
+    "@aee/reporter": "workspace:*",
+    "@aee/fix": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

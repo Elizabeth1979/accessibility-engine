@@ -1,0 +1,13 @@
+{
+  "name": "@aee/example-basic-playwright",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Example: attaching AEE to an existing Playwright test with one import swap.",
+  "dependencies": {
+    "@aee/playwright": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
+  }
+}

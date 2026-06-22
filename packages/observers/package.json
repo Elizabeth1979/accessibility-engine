@@ -1,0 +1,24 @@
+{
+  "name": "@aee/observers",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Evidence-grounding observers (DOM, a11y tree, screenshot, image, styles, network, screen reader).",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "pretest": "tsc -b",
+    "test": "node --test dist"
+  },
+  "dependencies": {
+    "@aee/core": "workspace:*",
+    "axe-core": "^4.11.2",
+    "@guidepup/virtual-screen-reader": "^0.25.0"
+  }
+}

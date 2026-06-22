@@ -1,0 +1,72 @@
+{
+  "$ref": "#/definitions/FixPlan",
+  "definitions": {
+    "FixPlan": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "type": "object",
+          "properties": {
+            "selector": {
+              "type": "string"
+            },
+            "a11yId": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "change": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "added",
+                "removed",
+                "modified"
+              ]
+            },
+            "before": {},
+            "after": {}
+          },
+          "required": [
+            "path",
+            "kind"
+          ],
+          "additionalProperties": false
+        },
+        "suggestedValue": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "target",
+        "change",
+        "suggestedValue",
+        "rationale",
+        "evidenceRefs"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

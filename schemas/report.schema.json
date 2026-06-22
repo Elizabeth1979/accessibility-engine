@@ -1,0 +1,146 @@
+{
+  "$ref": "#/definitions/Report",
+  "definitions": {
+    "Report": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "total": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "pass": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "fail": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "warn": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unknown": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "total",
+            "pass",
+            "fail",
+            "warn",
+            "unknown"
+          ],
+          "additionalProperties": false
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "PASS",
+                  "FAIL",
+                  "WARN",
+                  "UNKNOWN"
+                ]
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "critical",
+                  "serious",
+                  "moderate",
+                  "minor"
+                ]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ]
+              },
+              "reliability": {
+                "type": "string",
+                "enum": [
+                  "authoritative",
+                  "advisory"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              },
+              "evidenceRefs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "suggestedFix": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "status",
+              "confidence",
+              "reliability",
+              "reason",
+              "evidenceRefs"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "release": {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "string",
+              "enum": [
+                "ship",
+                "hold",
+                "block"
+              ]
+            },
+            "fails": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unknowns": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "decision",
+            "fails",
+            "unknowns",
+            "reason"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "summary",
+        "findings",
+        "release"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

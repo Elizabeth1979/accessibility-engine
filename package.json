@@ -1,0 +1,24 @@
+{
+  "name": "accessibility-engine",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Accessibility Evidence Engine (AEE) — AI-first accessibility testing that augments existing Playwright tests.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.4.0",
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "pnpm build && node --test \"packages/*/dist/**/*.test.js\" \"tests/*.test.js\"",
+    "gen:schemas": "pnpm build && node packages/core/dist/gen-schemas.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "zod-to-json-schema": "^3.24.1"
+  }
+}

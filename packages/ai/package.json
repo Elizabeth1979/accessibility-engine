@@ -1,0 +1,22 @@
+{
+  "name": "@aee/ai",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "AI judgment + conversational explain() + fix drafting. Sees captured evidence ONLY; depends on @aee/core only.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "pretest": "tsc -b",
+    "test": "node --test dist"
+  },
+  "dependencies": {
+    "@aee/core": "workspace:*"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@aee/core",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "AEE contracts, zod schemas, and core types. Depends on zod only.",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "pretest": "tsc -b",
+    "test": "node --test dist"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "zod-to-json-schema": "^3.24.1"
+  }
+}

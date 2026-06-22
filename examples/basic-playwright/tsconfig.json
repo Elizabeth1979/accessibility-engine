@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "."
+  },
+  "include": ["*.spec.ts"],
+  "references": [{ "path": "../../packages/playwright" }]
+}
