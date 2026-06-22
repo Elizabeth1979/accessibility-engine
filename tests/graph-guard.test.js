@@ -12,8 +12,12 @@ const deps = (pkg) => {
   return Object.keys(json.dependencies ?? {});
 };
 
-test("@aee/ai depends only on @aee/core (AI sees evidence only, never the live page)", () => {
-  assert.deepEqual(deps("ai").sort(), ["@aee/core"]);
+test("@aee/ai is grounded: depends on @aee/core but never on a driver or the live page", () => {
+  const d = deps("ai");
+  // The model SDK is allowed; reaching the live page is not. AI sees evidence only.
+  assert.ok(d.includes("@aee/core"), "ai must depend on @aee/core");
+  assert.ok(!d.includes("@aee/playwright"), "ai must not depend on @aee/playwright");
+  assert.ok(!d.includes("@aee/observers"), "ai must not depend on @aee/observers");
 });
 
 test("@aee/judges never imports a driver or the live page", () => {

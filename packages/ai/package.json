@@ -2,7 +2,7 @@
   "name": "@aee/ai",
   "version": "0.0.0",
   "type": "module",
-  "description": "AI judgment + conversational explain() + fix drafting. Sees captured evidence ONLY; depends on @aee/core only.",
+  "description": "AI judgment + conversational explain() + fix drafting. Sees captured evidence ONLY; never a driver or the live page.",
   "license": "MIT",
   "exports": {
     ".": {
@@ -10,13 +10,17 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b",
     "pretest": "tsc -b",
     "test": "node --test dist"
   },
   "dependencies": {
-    "@aee/core": "workspace:*"
+    "@aee/core": "workspace:*",
+    "@anthropic-ai/sdk": "^0.105.0",
+    "zod": "^3.24.1"
   }
 }

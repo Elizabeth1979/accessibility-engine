@@ -8,7 +8,7 @@ AEE is AI-first: AI judges contextual quality, explains findings, and drafts fix
 
 ## Decision
 
-The AI layer (`@aee/ai`) consumes **only** captured `EvidenceRecord`s — screenshots, DOM context, accessibility nodes, image bytes, computed styles. It has **no** access to a `Driver` or the live page. This is enforced structurally: `@aee/ai` depends only on `@aee/core`, and a `tests/graph-guard.test.js` check fails CI if that boundary is broken. Every AI output is tagged `source: "derived"` and cites the evidence it used.
+The AI layer (`@aee/ai`) consumes **only** captured `EvidenceRecord`s — screenshots, DOM context, accessibility nodes, image bytes, computed styles. It has **no** access to a `Driver` or the live page. This is enforced structurally: `@aee/ai` depends on `@aee/core` and a model SDK (currently `@anthropic-ai/sdk`) but never on `@aee/playwright` or `@aee/observers`, and a `tests/graph-guard.test.js` check fails CI if that boundary is crossed. Every AI output is tagged `source: "derived"` and cites the evidence it used.
 
 ## Consequences
 
