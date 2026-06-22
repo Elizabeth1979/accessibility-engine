@@ -1,17 +1,10 @@
-import { type EvidenceRecord, type Intent, SCHEMA_VERSION } from "@aee/core";
+import { type EvidenceRecord, type Intent, type NamingPayload, SCHEMA_VERSION } from "@aee/core";
 
 /**
  * Hand-authored evidence for the naming / text-alternatives wedge — no browser.
- * `after` carries what a grounding observer would capture; `imageDescription`
- * stands in for what the vision-capable capture will provide later.
+ * Each fixture's `after` is a NamingPayload (the same shape @aee/observers now
+ * captures from a live page), so the fixtures and real capture stay in lockstep.
  */
-export interface NamingPayload {
-  kind: "image" | "icon-button" | "link" | "heading";
-  accessibleName: string | null;
-  context: string;
-  imageDescription?: string;
-}
-
 export interface NamingFixture {
   label: string;
   intent?: Intent;

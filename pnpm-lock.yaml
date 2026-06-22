@@ -8,6 +8,15 @@ importers:
 
   .:
     devDependencies:
+      '@aee/ai':
+        specifier: workspace:*
+        version: link:packages/ai
+      '@aee/judges':
+        specifier: workspace:*
+        version: link:packages/judges
+      '@aee/playwright':
+        specifier: workspace:*
+        version: link:packages/playwright
       '@types/node':
         specifier: ^22.10.0
         version: 22.20.0

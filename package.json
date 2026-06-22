@@ -17,6 +17,9 @@
     "gen:schemas": "pnpm build && node packages/core/dist/gen-schemas.js"
   },
   "devDependencies": {
+    "@aee/ai": "workspace:*",
+    "@aee/judges": "workspace:*",
+    "@aee/playwright": "workspace:*",
     "@types/node": "^22.10.0",
     "typescript": "^5.7.2",
     "zod-to-json-schema": "^3.24.1"

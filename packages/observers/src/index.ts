@@ -42,3 +42,5 @@ export const groundingObservers: Observer[] = [
   networkObserver,
   virtualScreenReaderObserver,
 ];
+
+export { createNamingObserver } from "./naming.js";

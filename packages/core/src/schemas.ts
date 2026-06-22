@@ -54,6 +54,23 @@ export const zElementRef = z.object({
 });
 export type ElementRef = z.infer<typeof zElementRef>;
 
+/**
+ * Naming / text-alternative evidence: what a grounding observer captures for an
+ * element in the accessible-name wedge, and what @aee/ai judges for *contextual
+ * quality* (not mere presence). `accessibleName` is null when none is exposed
+ * (e.g. an <img> with no alt). `imageDescription` stands in for vision until the
+ * captured image bytes are fed to the model. The same shape is produced by real
+ * capture (@aee/observers) and consumed by the AI layer (@aee/ai).
+ */
+export const zNamingPayload = z.object({
+  kind: z.enum(["image", "icon-button", "link", "heading"]),
+  accessibleName: z.string().nullable(),
+  context: z.string(),
+  selector: z.string().optional(),
+  imageDescription: z.string().optional(),
+});
+export type NamingPayload = z.infer<typeof zNamingPayload>;
+
 export const zInteractionType = z.enum([
   "tab",
   "shift-tab",

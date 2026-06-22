@@ -29,3 +29,13 @@ test("@aee/judges never imports a driver or the live page", () => {
 test("@aee/core depends only on zod", () => {
   assert.deepEqual(deps("core").sort(), ["zod"]);
 });
+
+test("@aee/playwright is the DX/driver layer: it never depends on judges or the AI layer", () => {
+  // The end-to-end walking-skeleton test composes capture + judge + AI at the
+  // workspace-root level (a dev dependency), so the driver layer stays thin.
+  const d = deps("playwright");
+  assert.ok(d.includes("@aee/core"), "playwright must depend on @aee/core");
+  assert.ok(d.includes("@aee/observers"), "playwright must depend on @aee/observers");
+  assert.ok(!d.includes("@aee/judges"), "playwright must not depend on @aee/judges");
+  assert.ok(!d.includes("@aee/ai"), "playwright must not depend on @aee/ai");
+});
