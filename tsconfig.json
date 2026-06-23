@@ -8,6 +8,7 @@
     { "path": "packages/reporter" },
     { "path": "packages/playwright" },
     { "path": "packages/fix" },
+    { "path": "packages/engine" },
     { "path": "packages/mcp" },
     { "path": "packages/triage" },
     { "path": "examples/basic-playwright" }

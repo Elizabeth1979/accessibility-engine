@@ -59,6 +59,24 @@ importers:
         specifier: ^3.24.1
         version: 3.25.2(zod@3.25.76)
 
+  packages/engine:
+    dependencies:
+      '@aee/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@aee/core':
+        specifier: workspace:*
+        version: link:../core
+      '@aee/judges':
+        specifier: workspace:*
+        version: link:../judges
+      '@aee/playwright':
+        specifier: workspace:*
+        version: link:../playwright
+      '@aee/reporter':
+        specifier: workspace:*
+        version: link:../reporter
+
   packages/fix:
     dependencies:
       '@aee/core':
@@ -85,6 +103,9 @@ importers:
       '@aee/core':
         specifier: workspace:*
         version: link:../core
+      '@aee/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@aee/fix':
         specifier: workspace:*
         version: link:../fix

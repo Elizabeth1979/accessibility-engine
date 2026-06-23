@@ -7,9 +7,9 @@
   "include": ["src/**/*"],
   "references": [
     { "path": "../core" },
+    { "path": "../playwright" },
+    { "path": "../judges" },
     { "path": "../ai" },
-    { "path": "../reporter" },
-    { "path": "../fix" },
-    { "path": "../engine" }
+    { "path": "../reporter" }
   ]
 }

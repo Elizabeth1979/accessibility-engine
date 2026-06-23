@@ -1,8 +1,8 @@
 {
-  "name": "@aee/mcp",
+  "name": "@aee/engine",
   "version": "0.0.0",
   "type": "module",
-  "description": "Agent-native surface: an MCP server exposing AEE investigations, evidence, explanations, and fixes.",
+  "description": "Orchestrator: composes capture + judges + AI + reporter into investigate(). The only package that may touch both a driver and the judges.",
   "license": "MIT",
   "exports": {
     ".": {
@@ -18,10 +18,9 @@
   },
   "dependencies": {
     "@aee/core": "workspace:*",
+    "@aee/playwright": "workspace:*",
+    "@aee/judges": "workspace:*",
     "@aee/ai": "workspace:*",
-    "@aee/reporter": "workspace:*",
-    "@aee/fix": "workspace:*",
-    "@aee/engine": "workspace:*",
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@aee/reporter": "workspace:*"
   }
 }

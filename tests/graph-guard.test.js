@@ -39,3 +39,12 @@ test("@aee/playwright is the DX/driver layer: it never depends on judges or the 
   assert.ok(!d.includes("@aee/judges"), "playwright must not depend on @aee/judges");
   assert.ok(!d.includes("@aee/ai"), "playwright must not depend on @aee/ai");
 });
+
+test("@aee/engine is the composer: the only package that may reach both a driver and the judges", () => {
+  const d = deps("engine");
+  assert.ok(d.includes("@aee/core"), "engine must depend on @aee/core");
+  assert.ok(d.includes("@aee/playwright"), "engine composes capture (the driver)");
+  assert.ok(d.includes("@aee/judges"), "engine composes judging");
+  assert.ok(d.includes("@aee/ai"), "engine composes the AI layer");
+  assert.ok(d.includes("@aee/reporter"), "engine composes reporting");
+});

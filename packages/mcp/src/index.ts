@@ -1,7 +1,7 @@
 import { createAIClient } from "@aee/ai";
 import type { EvidenceRecord, FixPlan, GroundedAnswer, Report, Verdict } from "@aee/core";
+import { getRun, investigate as runInvestigation, latestRun } from "@aee/engine";
 import { planFix } from "@aee/fix";
-import { buildReport } from "@aee/reporter";
 
 export interface McpToolSpec {
   name: string;
@@ -22,11 +22,11 @@ export function listTools(): McpToolSpec[] {
   return AEE_MCP_TOOLS;
 }
 
-/** Phase: drive @aee/playwright, collect evidence, run @aee/judges with the AI client. */
-export async function investigate(_target: string): Promise<Report> {
-  const ai = createAIClient();
-  void ai; // grounded judgments wired in the walking skeleton
-  return buildReport([]);
+/** Run an investigation via the engine (capture → judge → report) and store the run. */
+export async function investigate(target: string): Promise<Report> {
+  const html = target.trimStart().startsWith("<") ? target : undefined;
+  const run = await runInvestigation({ html });
+  return run.report;
 }
 
 /** Conversation surface — thin wrapper over @aee/ai.explain (evidence only). */
@@ -36,6 +36,18 @@ export async function explain(question: string, evidence: EvidenceRecord[] = [])
 
 export function suggestFix(finding: Verdict): FixPlan | null {
   return planFix(finding);
+}
+
+/** Findings for a run (defaults to the latest investigation). */
+export function findings(runId?: string): Verdict[] {
+  const run = runId ? getRun(runId) : latestRun();
+  return run?.report.findings ?? [];
+}
+
+/** Evidence records behind a run (defaults to the latest investigation). */
+export function evidence(runId?: string): EvidenceRecord[] {
+  const run = runId ? getRun(runId) : latestRun();
+  return run?.evidence ?? [];
 }
 
 export interface McpServerOptions {
