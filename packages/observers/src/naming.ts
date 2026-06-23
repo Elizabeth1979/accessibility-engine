@@ -112,6 +112,22 @@ function scanNamingCandidates(): NamingCandidate[] {
       });
     }
   });
+  doc.querySelectorAll("a[href]").forEach((el: any) => {
+    out.push({
+      selector: cssPath(el),
+      kind: "link",
+      accessibleName: nameFor(el),
+      context: contextFor(el),
+    });
+  });
+  doc.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((el: any) => {
+    out.push({
+      selector: cssPath(el),
+      kind: "heading",
+      accessibleName: nameFor(el),
+      context: contextFor(el),
+    });
+  });
   return out;
 }
 

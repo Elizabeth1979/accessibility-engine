@@ -25,7 +25,7 @@ const skip = (await localModelReachable()) ? false : "no local OpenAI-compatible
 for (const fixture of NAMING_FIXTURES) {
   test(`local: ${fixture.label}`, { skip }, async () => {
     const ai = createAIClient({ provider: "local" });
-    const verdict = await ai.judge("accessible-name", fixture.evidence, fixture.intent);
+    const verdict = await ai.judge(fixture.concern ?? "accessible-name", fixture.evidence, fixture.intent);
     if (fixture.expect === "PASS") {
       assert.equal(verdict.verdict, "PASS", verdict.reason);
     } else {

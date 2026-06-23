@@ -25,7 +25,7 @@ const STOREFRONT = `
     <article>
       <img id="coat" alt="image"
         src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
-      <p>Red wool knee-length winter coat. $129.</p>
+      <p>Red wool knee-length winter coat. $129. <a id="more" href="/guide">Read more</a></p>
     </article>
     <header><button id="cart" aria-label="button">🛒</button></header>
   </main>`;
@@ -52,5 +52,13 @@ nodeTest(
 
     assert.ok(btn, "captured the icon-only button");
     assert.equal((btn.after as { accessibleName: string | null }).accessibleName, "button");
+
+    const heading = evidence.find((e) => (e.after as { kind?: string }).kind === "heading");
+    assert.ok(heading, "captured the heading");
+    assert.equal((heading.after as { accessibleName: string | null }).accessibleName, "Winter coats");
+
+    const link = evidence.find((e) => (e.after as { kind?: string }).kind === "link");
+    assert.ok(link, "captured the link");
+    assert.equal((link.after as { accessibleName: string | null }).accessibleName, "Read more");
   },
 );

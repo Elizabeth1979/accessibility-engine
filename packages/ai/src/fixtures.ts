@@ -7,6 +7,8 @@ import { type EvidenceRecord, type Intent, type NamingPayload, SCHEMA_VERSION } 
  */
 export interface NamingFixture {
   label: string;
+  /** The judge concern this fixture exercises (default "accessible-name"). */
+  concern?: string;
   intent?: Intent;
   evidence: EvidenceRecord[];
   /** Expected verdict family for the live test (PASS, or a non-PASS: FAIL/WARN). */
@@ -72,6 +74,36 @@ export const NAMING_FIXTURES: NamingFixture[] = [
       accessibleName: null,
       context: "Hero banner at the top of the storefront home page.",
       imageDescription: "Promotional text reading 'Summer Sale — 50% off' over a beach photo.",
+    }),
+  },
+  {
+    label: "vague link text ('Read more')",
+    concern: "link-text",
+    expect: "non-PASS",
+    evidence: evidence({
+      kind: "link",
+      accessibleName: "Read more",
+      context: "End of a teaser paragraph about how to care for a wool winter coat.",
+    }),
+  },
+  {
+    label: "descriptive link text",
+    concern: "link-text",
+    expect: "PASS",
+    evidence: evidence({
+      kind: "link",
+      accessibleName: "Read our wool winter coat care guide",
+      context: "End of a teaser paragraph about how to care for a wool winter coat.",
+    }),
+  },
+  {
+    label: "non-descriptive heading ('Section 2')",
+    concern: "heading-structure",
+    expect: "non-PASS",
+    evidence: evidence({
+      kind: "heading",
+      accessibleName: "Section 2",
+      context: "Heading above a block describing the store's 30-day return policy.",
     }),
   },
 ];
