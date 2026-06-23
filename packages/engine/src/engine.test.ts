@@ -38,6 +38,7 @@ test("judgeEvidence routes each evidence kind to its concern and skips unroutabl
   assert.equal(verdicts.length, 3, "one verdict per routable element, unroutable skipped");
   assert.ok(verdicts.every((v) => v.status === "FAIL"));
   assert.ok(verdicts.every((v) => (v.suggestedFix ?? "").length > 0));
+  assert.ok(verdicts.every((v) => v.target?.role), "each verdict carries its element kind");
 });
 
 // Live end-to-end: a real page, real local model. Gated on Chromium + a local server.
@@ -82,5 +83,6 @@ test("investigate: live HTML -> a multi-concern report on the local model", { sk
     run.report.findings.some((v) => v.status === "FAIL" && (v.suggestedFix ?? "").length > 0),
     "at least one failing verdict with a concrete suggested fix",
   );
+  assert.ok(run.report.findings.some((v) => v.target?.selector), "findings carry the element selector");
   assert.match(run.id, /^run-/);
 });

@@ -124,6 +124,8 @@ export const zVerdict = z.object({
   reason: z.string(),
   evidenceRefs: z.array(z.string()),
   suggestedFix: z.string().optional(),
+  /** Which element this verdict is about (selector; element kind via `role`; current name). */
+  target: zElementRef.optional(),
 });
 export type Verdict = z.infer<typeof zVerdict>;
 

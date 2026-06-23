@@ -89,6 +89,24 @@
               },
               "suggestedFix": {
                 "type": "string"
+              },
+              "target": {
+                "type": "object",
+                "properties": {
+                  "selector": {
+                    "type": "string"
+                  },
+                  "a11yId": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
               }
             },
             "required": [

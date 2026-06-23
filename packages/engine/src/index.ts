@@ -43,10 +43,19 @@ export async function judgeEvidence(
 ): Promise<Verdict[]> {
   const verdicts: Verdict[] = [];
   for (const record of evidence) {
-    const kind = (record.after as Partial<NamingPayload> | null)?.kind;
-    const route = kind ? ROUTES[kind] : undefined;
-    if (!route) continue;
-    verdicts.push(await route.judge.judge([record], ai, { concern: route.concern, intent }));
+    const payload = (record.after as Partial<NamingPayload> | null) ?? undefined;
+    const route = payload?.kind ? ROUTES[payload.kind] : undefined;
+    if (!route || !payload) continue;
+    const verdict = await route.judge.judge([record], ai, { concern: route.concern, intent });
+    // Attach the element this verdict is about, so the report and FixPlans can target it.
+    verdicts.push({
+      ...verdict,
+      target: {
+        selector: payload.selector,
+        role: payload.kind,
+        name: payload.accessibleName ?? undefined,
+      },
+    });
   }
   return verdicts;
 }
