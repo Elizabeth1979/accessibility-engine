@@ -1,9 +1,11 @@
 export {
+  type AIProvider,
   ConcernAIClient,
   createAIClient,
   type CreateAIClientOptions,
   enforceIntegrity,
 } from "./client.js";
+export { LocalJudgmentModel, type LocalOptions } from "./local.js";
 export {
   type Assessment,
   ClaudeJudgmentModel,

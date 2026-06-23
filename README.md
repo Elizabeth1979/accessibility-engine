@@ -8,7 +8,7 @@ Static scanners (axe-core) answer *"is the attribute present?"* and top out arou
 
 AEE is **agent-native**: you operate it by chat through an MCP server (run investigations, query the evidence, apply fixes), declare a page's **intent** in plain language to sharpen judgments, chat with the report locally, and let it open remediation PRs.
 
-> ⚠️ **Status: pre-alpha scaffold.** This repository currently contains the architecture, contracts, JSON schemas, and typed **stubs** only — no accessibility logic yet. See [`docs/PLAN.md`](docs/PLAN.md) for the full plan and milestones.
+> ⚠️ **Status: pre-alpha.** The **Tier-1 naming / alt-text wedge works end to end** — a live Playwright page is captured to evidence and judged (with a suggested fix) by Claude **or a local model, no API key**. Broader coverage and the agent surfaces (MCP, triage, fix) are still typed **stubs**. See [`docs/PLAN.md`](docs/PLAN.md) for the plan and milestones.
 
 ## How it works
 
@@ -59,6 +59,27 @@ pnpm gen:schemas # regenerate JSON Schema in /schemas from the zod source
 ```
 
 Requires Node ≥ 22 and pnpm.
+
+## Model backends (no API key required)
+
+The AI layer is provider-agnostic: it depends on a one-method `JudgmentModel` seam, not on any SDK. Pick a backend with `createAIClient({ provider })` or the `AEE_LLM_PROVIDER` env var.
+
+| Provider | Backend | Needs |
+| --- | --- | --- |
+| `local` | A local model over the OpenAI-compatible API (Ollama, LM Studio, llama.cpp, vLLM, …) | a running local server — **no key** |
+| `claude` | Anthropic Claude (`claude-opus-4-8` by default) | `ANTHROPIC_API_KEY` |
+| `stub` | Always-`UNKNOWN` (the default when no key is set) | nothing |
+
+Run the engine against a local model — no key, no cloud:
+
+```bash
+# Ollama (default base URL http://localhost:11434/v1)
+export AEE_LLM_PROVIDER=local
+export AEE_LLM_MODEL=gemma4:e4b      # any chat model you have pulled
+pnpm test                            # the local live tests now exercise real judging
+```
+
+Point `AEE_LLM_BASE_URL` at LM Studio (`http://localhost:1234/v1`), llama.cpp, vLLM, or any OpenAI-compatible endpoint. A local judgment that can't be reached or parsed degrades to `UNKNOWN` — never a guessed `PASS`.
 
 ## License
 

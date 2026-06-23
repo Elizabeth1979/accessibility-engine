@@ -13,6 +13,7 @@ import {
   type JudgmentModel,
   StubJudgmentModel,
 } from "./model.js";
+import { LocalJudgmentModel, type LocalOptions } from "./local.js";
 import { buildSystemPrompt, buildUserPrompt } from "./prompt.js";
 
 /**
@@ -88,23 +89,54 @@ export class ConcernAIClient implements AIClient {
   }
 }
 
+/** Which model backs the AI client. "auto" = Claude when a key is present, else stub. */
+export type AIProvider = "auto" | "local" | "claude" | "stub";
+
 export interface CreateAIClientOptions {
-  /** Inject a model (tests / custom transport). Overrides apiKey/modelId. */
+  /** Inject a model (tests / custom transport). Overrides every other selector. */
   model?: JudgmentModel;
+  /** Pick a backend explicitly. Defaults to AEE_LLM_PROVIDER, else "auto". */
+  provider?: AIProvider;
+  /** Local / self-hosted (Ollama, LM Studio, ...) options; presence implies provider "local". */
+  local?: LocalOptions;
   apiKey?: string;
   modelId?: string;
   reliability?: Reliability;
 }
 
 /**
- * Build an AIClient. Uses the injected model if given; otherwise Claude when an
- * API key is available (option or ANTHROPIC_API_KEY); otherwise a stub that
- * always returns UNKNOWN — so the build and CI stay green without a key.
+ * Build an AIClient. Selection order:
+ *   1. an injected `model` (tests / custom transport);
+ *   2. provider "local" (or any `local` / AEE_LLM_* config) → a local, no-key model;
+ *   3. provider "claude" or a present API key → Claude;
+ *   4. otherwise a stub that always returns UNKNOWN — so CI stays green with no key.
+ * The provider is also read from AEE_LLM_PROVIDER, so the whole engine can be pointed
+ * at a local model with one env var and no code change.
  */
 export function createAIClient(opts: CreateAIClientOptions = {}): AIClient {
-  const hasKey = Boolean(opts.apiKey || process.env.ANTHROPIC_API_KEY);
-  const model =
-    opts.model ??
-    (hasKey ? new ClaudeJudgmentModel({ apiKey: opts.apiKey, modelId: opts.modelId }) : new StubJudgmentModel());
-  return new ConcernAIClient(model, opts.reliability);
+  return new ConcernAIClient(resolveModel(opts), opts.reliability);
+}
+
+function resolveModel(opts: CreateAIClientOptions): JudgmentModel {
+  if (opts.model) return opts.model;
+
+  const provider = opts.provider ?? (process.env.AEE_LLM_PROVIDER as AIProvider | undefined) ?? "auto";
+  const wantsLocal = provider === "local" || Boolean(opts.local);
+
+  if (wantsLocal) {
+    return new LocalJudgmentModel({
+      baseUrl: opts.local?.baseUrl ?? process.env.AEE_LLM_BASE_URL,
+      model: opts.local?.model ?? process.env.AEE_LLM_MODEL,
+      apiKey: opts.local?.apiKey ?? process.env.AEE_LLM_API_KEY,
+      temperature: opts.local?.temperature,
+      timeoutMs: opts.local?.timeoutMs,
+    });
+  }
+  if (provider === "stub") return new StubJudgmentModel();
+
+  const apiKey = opts.apiKey ?? process.env.ANTHROPIC_API_KEY;
+  if (provider === "claude" || apiKey) {
+    return new ClaudeJudgmentModel({ apiKey: opts.apiKey, modelId: opts.modelId });
+  }
+  return new StubJudgmentModel();
 }
