@@ -32,7 +32,10 @@ const ASSESSMENT_JSON_SCHEMA = {
  */
 export interface JudgmentModel {
   readonly name: string;
+  /** Judge a concern → a structured assessment. */
   assess(system: string, user: string): Promise<Assessment>;
+  /** Answer a grounded question → free-form text (the conversation surface). */
+  answer(system: string, user: string): Promise<string>;
 }
 
 export interface ClaudeOptions {
@@ -76,6 +79,23 @@ export class ClaudeJudgmentModel implements JudgmentModel {
     }
     return zAssessment.parse(JSON.parse(text));
   }
+
+  async answer(system: string, user: string): Promise<string> {
+    const response = await this.#client.messages.create({
+      model: this.#modelId,
+      max_tokens: 16000,
+      thinking: { type: "adaptive" },
+      system,
+      messages: [{ role: "user", content: user }],
+    });
+    if (response.stop_reason === "refusal") return "I cannot answer that.";
+    const text = response.content
+      .filter((block): block is Anthropic.TextBlock => block.type === "text")
+      .map((block) => block.text)
+      .join("\n")
+      .trim();
+    return text || "(no answer was returned)";
+  }
 }
 
 /** Returned when no model or API key is configured. Always UNKNOWN — never a guessed PASS. */
@@ -88,9 +108,16 @@ export class StubJudgmentModel implements JudgmentModel {
       reason: "AI judgment not configured (no model or ANTHROPIC_API_KEY).",
     };
   }
+  async answer(): Promise<string> {
+    return "AI conversation is not configured (no model or ANTHROPIC_API_KEY).";
+  }
 }
 
 /** Deterministic model for tests — returns a fixed assessment. */
-export function fixedModel(assessment: Assessment, name = "fixed"): JudgmentModel {
-  return { name, assess: async () => assessment };
+export function fixedModel(assessment: Assessment, name = "fixed", answerText?: string): JudgmentModel {
+  return {
+    name,
+    assess: async () => assessment,
+    answer: async () => answerText ?? assessment.reason,
+  };
 }

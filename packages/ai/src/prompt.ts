@@ -48,3 +48,31 @@ export function buildUserPrompt(evidence: EvidenceRecord[], intent?: Intent): st
   parts.push("Judge the concern for the element described by this evidence.");
   return parts.join("\n");
 }
+
+/** System prompt for grounded Q&A over evidence — the conversation surface. */
+export function buildExplainSystemPrompt(): string {
+  return [
+    "You are an accessibility expert answering a question about captured evidence.",
+    "Answer ONLY from the evidence provided. Do not invent details about the page,",
+    "element, or image that the evidence does not state. If the evidence is insufficient",
+    "to answer, say so plainly rather than guessing.",
+    "Be concise and concrete; when relevant, name the element and quote its accessible name.",
+  ].join("\n");
+}
+
+/** Serializes a question + evidence for the conversation surface. Evidence only — no live page. */
+export function buildExplainUserPrompt(question: string, evidence: EvidenceRecord[]): string {
+  const parts: string[] = [`Question: ${question}`, ""];
+  if (evidence.length === 0) {
+    parts.push("Evidence: (none captured)");
+  } else {
+    parts.push("Evidence records (the only information you may use):");
+    for (const record of evidence) {
+      parts.push(
+        `- observer=${record.observer} interaction=${record.interactionId} ` +
+          `after=${JSON.stringify(record.after)}`,
+      );
+    }
+  }
+  return parts.join("\n");
+}

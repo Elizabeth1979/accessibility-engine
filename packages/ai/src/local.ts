@@ -54,7 +54,7 @@ export class LocalJudgmentModel implements JudgmentModel {
   async assess(system: string, user: string): Promise<Assessment> {
     let content: string;
     try {
-      content = await this.#complete(system + JSON_DIRECTIVE, user);
+      content = await this.#chat(system + JSON_DIRECTIVE, user, true);
     } catch (err) {
       return unknown(`Local model unreachable or errored (${this.name}): ${messageOf(err)}`);
     }
@@ -63,7 +63,16 @@ export class LocalJudgmentModel implements JudgmentModel {
     return zAssessment.parse(assessment);
   }
 
-  async #complete(system: string, user: string): Promise<string> {
+  async answer(system: string, user: string): Promise<string> {
+    try {
+      const text = (await this.#chat(system, user, false)).trim();
+      return text || "(no answer was returned)";
+    } catch (err) {
+      return `Local model unreachable or errored (${this.name}): ${messageOf(err)}`;
+    }
+  }
+
+  async #chat(system: string, user: string, json: boolean): Promise<string> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.#timeoutMs);
     try {
@@ -77,7 +86,7 @@ export class LocalJudgmentModel implements JudgmentModel {
           model: this.#model,
           stream: false,
           temperature: this.#temperature,
-          response_format: { type: "json_object" },
+          ...(json ? { response_format: { type: "json_object" } } : {}),
           messages: [
             { role: "system", content: system },
             { role: "user", content: user },

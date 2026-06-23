@@ -15,6 +15,11 @@ export {
   StubJudgmentModel,
   zAssessment,
 } from "./model.js";
-export { buildSystemPrompt, buildUserPrompt } from "./prompt.js";
+export {
+  buildExplainSystemPrompt,
+  buildExplainUserPrompt,
+  buildSystemPrompt,
+  buildUserPrompt,
+} from "./prompt.js";
 export { NAMING_FIXTURES, type NamingFixture } from "./fixtures.js";
 export type { NamingPayload } from "@aee/core";

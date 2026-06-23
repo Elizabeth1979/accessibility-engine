@@ -1,5 +1,5 @@
 import { createAIClient } from "@aee/ai";
-import type { FixPlan, GroundedAnswer, Report, Verdict } from "@aee/core";
+import type { EvidenceRecord, FixPlan, GroundedAnswer, Report, Verdict } from "@aee/core";
 import { planFix } from "@aee/fix";
 import { buildReport } from "@aee/reporter";
 
@@ -30,8 +30,8 @@ export async function investigate(_target: string): Promise<Report> {
 }
 
 /** Conversation surface — thin wrapper over @aee/ai.explain (evidence only). */
-export async function explain(question: string): Promise<GroundedAnswer> {
-  return createAIClient().explain(question, []);
+export async function explain(question: string, evidence: EvidenceRecord[] = []): Promise<GroundedAnswer> {
+  return createAIClient().explain(question, evidence);
 }
 
 export function suggestFix(finding: Verdict): FixPlan | null {

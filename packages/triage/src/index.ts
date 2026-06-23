@@ -1,5 +1,5 @@
 import { createAIClient } from "@aee/ai";
-import type { GroundedAnswer, Report } from "@aee/core";
+import type { EvidenceRecord, GroundedAnswer, Report } from "@aee/core";
 import { renderTerminalSummary } from "@aee/reporter";
 
 export interface TriageOptions {
@@ -8,12 +8,12 @@ export interface TriageOptions {
 }
 
 /**
- * Ask a grounded question about a report's evidence. Shared with the MCP
- * surface via @aee/ai.explain — the AI sees evidence only.
+ * Ask a grounded question about captured evidence. Shared with the MCP surface
+ * via @aee/ai.explain — the AI sees evidence only. (Scoping a whole report's
+ * evidence to the conversation lands with the evidence store.)
  */
-export async function ask(question: string, report?: Report): Promise<GroundedAnswer> {
-  void report; // Phase: scope the conversation to this report's evidence
-  return createAIClient().explain(question, []);
+export async function ask(question: string, evidence: EvidenceRecord[] = []): Promise<GroundedAnswer> {
+  return createAIClient().explain(question, evidence);
 }
 
 /** A plain-text rendering of a report, reused by the UI shell. */

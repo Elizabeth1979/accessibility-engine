@@ -37,3 +37,12 @@ for (const fixture of NAMING_FIXTURES) {
     }
   });
 }
+
+test("local: explain() returns a grounded, non-empty answer", { skip }, async () => {
+  const fixture = NAMING_FIXTURES.find((f) => f.label.includes("icon button"));
+  assert.ok(fixture);
+  const ai = createAIClient({ provider: "local" });
+  const answer = await ai.explain("Why is this control's accessible name a problem?", fixture.evidence);
+  assert.ok(answer.answer.length > 0, answer.answer);
+  assert.ok(answer.evidenceRefs.length > 0);
+});

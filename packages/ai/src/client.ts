@@ -14,7 +14,12 @@ import {
   StubJudgmentModel,
 } from "./model.js";
 import { LocalJudgmentModel, type LocalOptions } from "./local.js";
-import { buildSystemPrompt, buildUserPrompt } from "./prompt.js";
+import {
+  buildExplainSystemPrompt,
+  buildExplainUserPrompt,
+  buildSystemPrompt,
+  buildUserPrompt,
+} from "./prompt.js";
 
 /**
  * Integrity guard: an advisory judgment may never assert a confident PASS.
@@ -78,13 +83,15 @@ export class ConcernAIClient implements AIClient {
     return toJudgment(assessment, evidence, this.#reliability);
   }
 
-  async explain(_question: string, evidence: EvidenceRecord[]): Promise<GroundedAnswer> {
-    // Conversation surface is wired with the MCP/triage milestone; the judge wedge
-    // does not implement it yet. Grounded-but-stub answer keeps the surface honest.
+  async explain(question: string, evidence: EvidenceRecord[]): Promise<GroundedAnswer> {
+    const answer = await this.#model.answer(
+      buildExplainSystemPrompt(),
+      buildExplainUserPrompt(question, evidence),
+    );
     return {
-      answer: "Conversational explain() is not implemented in this milestone.",
+      answer,
       evidenceRefs: uniqueRefs(evidence),
-      confidence: "low",
+      confidence: evidence.length > 0 ? "medium" : "low",
     };
   }
 }

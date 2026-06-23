@@ -41,3 +41,19 @@ test("integrity guard downgrades an advisory PASS to UNKNOWN", () => {
   });
   assert.equal(guarded.verdict, "UNKNOWN");
 });
+
+test("explain() answers from evidence and cites the records it used", async () => {
+  const fixture = NAMING_FIXTURES.find((f) => f.label.includes("icon button"));
+  assert.ok(fixture);
+  const ai = createAIClient({
+    model: fixedModel(
+      { verdict: "FAIL", confidence: "high", reason: "n/a" },
+      "fixed",
+      "The cart button's accessible name is 'button', which is generic.",
+    ),
+  });
+  const answer = await ai.explain("Why did the cart button fail?", fixture.evidence);
+  assert.match(answer.answer, /generic|button/i);
+  assert.ok(answer.evidenceRefs.length > 0);
+  assert.equal(answer.confidence, "medium");
+});
