@@ -11,6 +11,7 @@
     }
   },
   "files": ["dist"],
+  "bin": { "aee-mcp": "./dist/bin.js" },
   "scripts": {
     "build": "tsc -b",
     "pretest": "tsc -b",

@@ -34,7 +34,7 @@ The core invariant: **AI sees captured evidence only, never the live page** — 
 | `@aee/triage` | Local "chat with your report" UI |
 | `@aee/fix` | Apply suggested fixes and open PRs |
 
-## Quickstart (target API — not yet implemented)
+## Quickstart — drop-in Playwright fixture
 
 ```ts
 import { test, expect } from '@aee/playwright'; // drop-in for '@playwright/test'
@@ -47,6 +47,27 @@ test('checkout flow', async ({ page, aee }) => {
   // ...your existing test, unchanged...
 });
 ```
+
+## Talk to it — the MCP server
+
+AEE is agent-native: a coding agent (Claude Code, Cursor, …) connects to the MCP server and investigates pages by chat. Build, then run it over stdio:
+
+```bash
+pnpm build
+node packages/mcp/dist/bin.js      # or `aee-mcp` once the package is linked
+```
+
+Register it like any stdio MCP server — local model, no API key:
+
+```json
+{ "mcpServers": { "aee": {
+  "command": "node",
+  "args": ["/abs/path/accessibility-engine/packages/mcp/dist/bin.js"],
+  "env": { "AEE_LLM_PROVIDER": "local" }
+} } }
+```
+
+Then *investigate* a page (→ a graded report with fixes), *explain* a finding from evidence, and *suggest_fix* (→ targeted `FixPlan`s the agent applies to source). Full reference: [docs/mcp-tools.md](docs/mcp-tools.md).
 
 ## Development
 
