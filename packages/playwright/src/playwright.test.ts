@@ -28,6 +28,7 @@ const STOREFRONT = `
       <p>Red wool knee-length winter coat. $129. <a id="more" href="/guide">Read more</a></p>
     </article>
     <header><button id="cart" aria-label="button">🛒</button></header>
+    <form><label for="email">Email address</label><input id="email" type="email" /></form>
   </main>`;
 
 nodeTest(
@@ -60,5 +61,9 @@ nodeTest(
     const link = evidence.find((e) => (e.after as { kind?: string }).kind === "link");
     assert.ok(link, "captured the link");
     assert.equal((link.after as { accessibleName: string | null }).accessibleName, "Read more");
+
+    const field = evidence.find((e) => (e.after as { kind?: string }).kind === "form-field");
+    assert.ok(field, "captured the form field");
+    assert.equal((field.after as { accessibleName: string | null }).accessibleName, "Email address");
   },
 );

@@ -106,4 +106,14 @@ export const NAMING_FIXTURES: NamingFixture[] = [
       context: "Heading above a block describing the store's 30-day return policy.",
     }),
   },
+  {
+    label: "form field labeled only by a placeholder",
+    concern: "form-label",
+    expect: "non-PASS",
+    evidence: evidence({
+      kind: "form-field",
+      accessibleName: null,
+      context: "Email input in the newsletter sign-up form; its only visible text is the placeholder 'Email'.",
+    }),
+  },
 ];

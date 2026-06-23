@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { NAMING_FIXTURES, createAIClient, fixedModel } from "@aee/ai";
-import { altTextJudge, linkTextJudge } from "./index.js";
+import { altTextJudge, formLabelJudge, linkTextJudge } from "./index.js";
 
 // Proves the judge → AI client → verdict path end to end, with no browser:
 // the judge consumes captured evidence, delegates to the (faked) AI layer, and
@@ -45,4 +45,23 @@ test("linkTextJudge flags vague link text and surfaces a better one", async () =
   });
   assert.equal(verdict.status, "FAIL");
   assert.match(verdict.suggestedFix ?? "", /care guide/i);
+});
+
+test("formLabelJudge flags a placeholder-only field and surfaces a label", async () => {
+  const ai = createAIClient({
+    model: fixedModel({
+      verdict: "FAIL",
+      confidence: "high",
+      reason: "a placeholder is not a programmatic label",
+      suggestedFix: "Email address",
+    }),
+  });
+  const fixture = NAMING_FIXTURES.find((f) => f.label.includes("placeholder"));
+  assert.ok(fixture);
+  const verdict = await formLabelJudge.judge(fixture.evidence, ai, {
+    concern: "form-label",
+    intent: fixture.intent,
+  });
+  assert.equal(verdict.status, "FAIL");
+  assert.match(verdict.suggestedFix ?? "", /email/i);
 });

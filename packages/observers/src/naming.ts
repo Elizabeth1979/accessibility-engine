@@ -91,6 +91,25 @@ function scanNamingCandidates(): NamingCandidate[] {
     return [headingText, snippet].filter(Boolean).join(" — ");
   }
 
+  function fieldName(el: any): string | null {
+    const aria = nameFor(el);
+    if (aria) return aria;
+    if (el.id) {
+      for (const lbl of doc.querySelectorAll("label[for]")) {
+        if (lbl.getAttribute("for") === el.id) {
+          const text = norm(lbl.textContent);
+          if (text) return text;
+        }
+      }
+    }
+    const wrapping = el.closest("label");
+    if (wrapping) {
+      const text = norm(wrapping.textContent);
+      if (text) return text;
+    }
+    return null;
+  }
+
   const isIconOnly = (el: any): boolean => !/\p{L}/u.test(norm(el.textContent));
 
   const out: NamingCandidate[] = [];
@@ -125,6 +144,16 @@ function scanNamingCandidates(): NamingCandidate[] {
       selector: cssPath(el),
       kind: "heading",
       accessibleName: nameFor(el),
+      context: contextFor(el),
+    });
+  });
+  doc.querySelectorAll("input, textarea, select").forEach((el: any) => {
+    const type = String(el.getAttribute("type") || "").toLowerCase();
+    if (["hidden", "submit", "button", "reset", "image"].includes(type)) return;
+    out.push({
+      selector: cssPath(el),
+      kind: "form-field",
+      accessibleName: fieldName(el),
       context: contextFor(el),
     });
   });

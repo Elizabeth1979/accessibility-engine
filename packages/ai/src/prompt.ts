@@ -14,6 +14,8 @@ const CONCERN_GUIDANCE: Record<string, string> = {
     "For link text specifically: it must make sense on its own. Screen-reader users navigate a list of links out of context, so generic text like 'Read more', 'Click here', or 'Learn more' is a FAIL even when the surrounding paragraph explains it — the link itself must convey where it goes.",
   "heading-structure":
     "For headings specifically: a heading must describe the content of the section it labels. Generic or positional headings like 'Section 2', 'Heading', or 'Details' are a FAIL — users navigate by a list of headings out of context.",
+  "form-label":
+    "For form fields specifically: every input needs a programmatically associated label. A placeholder is NOT a label (it disappears on input and is unreliable for assistive tech), so a field labeled only by a placeholder — or with no label at all — is a FAIL.",
 };
 
 export function buildSystemPrompt(concern: string): string {

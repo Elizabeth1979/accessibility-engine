@@ -63,7 +63,7 @@ export type ElementRef = z.infer<typeof zElementRef>;
  * capture (@aee/observers) and consumed by the AI layer (@aee/ai).
  */
 export const zNamingPayload = z.object({
-  kind: z.enum(["image", "icon-button", "link", "heading"]),
+  kind: z.enum(["image", "icon-button", "link", "heading", "form-field"]),
   accessibleName: z.string().nullable(),
   context: z.string(),
   selector: z.string().optional(),
