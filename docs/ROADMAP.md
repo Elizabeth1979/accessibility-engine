@@ -79,5 +79,5 @@ Tier 1 proved the thesis: AI elevates each check from "is the attribute present?
 
 ## Status — resume here
 
-- ✅ Tier 1 complete (`6334e9c`); ✅ Phase A — `@aee/engine` + real `investigate()` (`2b265be`); ✅ Phase B — real MCP server, stdio + in-memory (`0375642`).
-- ▶ **NEXT: Phase C — confirm/polish the reporter (multi-concern aggregation + release policy), then Phase D (agentic fix: FixPlan → patch → gh PR).**
+- ✅ Tier 1; ✅ A — engine + `investigate()` (`2b265be`); ✅ B — real MCP server (`0375642`); ✅ C — reporter (was already complete); ✅ D — targeted FixPlans + PR scaffold (`bea0119`). The core pipeline (investigate → judge → report → explain → suggest fix), the agent surface (MCP), and the local-model default are all real and verified.
+- ▶ **NEXT — both need a steer:** Phase E (minimal local triage UI shell over `ask()` — design-sensitive) and Phase F (Tiers 2–3 — needs a vision-capable model; local `gemma4:e4b` is text-only, so it requires Claude or a local vision model).
