@@ -79,5 +79,5 @@ Tier 1 proved the thesis: AI elevates each check from "is the attribute present?
 
 ## Status — resume here
 
-- ✅ Tier 1 complete through commit `6334e9c`; AI judge, local model, capture, and `explain()` all real and verified locally.
-- ▶ **NEXT (not yet executed): Phase A1 — scaffold `@aee/engine`.**
+- ✅ Tier 1 complete (`6334e9c`); ✅ Phase A — `@aee/engine` + real `investigate()` (`2b265be`); ✅ Phase B — real MCP server, stdio + in-memory (`0375642`).
+- ▶ **NEXT: Phase C — confirm/polish the reporter (multi-concern aggregation + release policy), then Phase D (agentic fix: FixPlan → patch → gh PR).**
