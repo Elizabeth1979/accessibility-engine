@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { NAMING_FIXTURES, createAIClient, fixedModel } from "@aee/ai";
 import { type EvidenceRecord, SCHEMA_VERSION } from "@aee/core";
 import {
+  captureAxe,
   captureInteraction,
   captureKeyboard,
   captureLiveRegion,
@@ -243,4 +244,39 @@ test("captureVision: a removed focus indicator is caught by a vision model", { s
   const ai = createAIClient({ provider: "local", local: { model: visionModel } });
   const verdicts = await judgeEvidence(evidence, ai);
   assert.notEqual(verdicts[0]?.status, "PASS"); // no visible focus indicator is not a PASS
+});
+
+const AXE_BAD = `<main><button id="bare"></button><img src="x.png"></main>`;
+
+test("captureAxe produces deterministic violation evidence", {
+  skip: chromiumAvailable() ? false : "no Chromium browser available",
+}, async () => {
+  const evidence = await captureAxe(AXE_BAD);
+  const rules = evidence.map((e) => (e.after as { rule: string }).rule);
+  assert.ok(rules.includes("button-name"), `expected button-name in ${rules.join(",")}`);
+  assert.ok(rules.includes("image-alt"));
+  assert.ok(evidence.every((e) => (e.after as { kind: string }).kind === "axe"));
+});
+
+const FLOOR_AND_AI = `<main>
+  <h1>Shop</h1>
+  <img id="coat" alt="image" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+  <button id="bare"></button>
+</main>`;
+
+test("investigate composes the axe floor with AI quality (local model)", { skip }, async () => {
+  const run = await investigate({ html: FLOOR_AND_AI }, { ai: createAIClient({ provider: "local" }) });
+  const findings = run.report.findings;
+  // Deterministic floor: axe flags the empty button — authoritative, no AI.
+  assert.ok(
+    findings.some(
+      (v) => v.target?.role === "button-name" && v.status === "FAIL" && v.reliability === "authoritative",
+    ),
+    "axe floor should flag the empty button",
+  );
+  // AI quality: alt='image' is present (axe passes it) but flagged as meaningless.
+  assert.ok(
+    findings.some((v) => v.target?.selector === "#coat" && v.status === "FAIL"),
+    "AI should flag the meaningless alt that axe lets pass",
+  );
 });

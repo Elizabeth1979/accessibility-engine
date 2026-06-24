@@ -5,6 +5,7 @@ import { collectEvidence, defaultCaptureObservers } from "./capture.js";
 export { PlaywrightDriver, artifactRef } from "./driver.js";
 export { createClock } from "./clock.js";
 export {
+  captureAxe,
   captureHtml,
   captureInteraction,
   captureKeyboard,

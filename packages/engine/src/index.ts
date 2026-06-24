@@ -1,11 +1,13 @@
 import { createAIClient } from "@aee/ai";
 import type {
   AIClient,
+  AxePayload,
   ElementRef,
   EvidenceRecord,
   Intent,
   Judge,
   Report,
+  Severity,
   Verdict,
 } from "@aee/core";
 import {
@@ -20,7 +22,7 @@ import {
   linkTextJudge,
   liveRegionJudge,
 } from "@aee/judges";
-import { captureHtml } from "@aee/playwright";
+import { captureAxe, captureHtml } from "@aee/playwright";
 import { buildReport } from "@aee/reporter";
 
 /**
@@ -102,18 +104,49 @@ const runs = new Map<string, Run>();
 let runCounter = 0;
 let lastRunId: string | undefined;
 
+const AXE_SEVERITY: Record<string, Severity> = {
+  critical: "critical",
+  serious: "serious",
+  moderate: "moderate",
+  minor: "minor",
+};
+
+/** Map axe-core violations to deterministic, authoritative verdicts — the floor, no AI. */
+export function axeVerdicts(evidence: EvidenceRecord[]): Verdict[] {
+  const verdicts: Verdict[] = [];
+  for (const record of evidence) {
+    const after = record.after as Partial<AxePayload> | null;
+    if (!after || after.kind !== "axe") continue;
+    verdicts.push({
+      status: "FAIL",
+      severity: AXE_SEVERITY[after.impact ?? "minor"] ?? "minor",
+      confidence: "high",
+      reliability: "authoritative",
+      reason: `axe (${after.rule}): ${after.help ?? ""}`.trim(),
+      evidenceRefs: [record.interactionId],
+      target: { selector: after.selector, role: after.rule },
+    });
+  }
+  return verdicts;
+}
+
 /**
- * Run an end-to-end investigation: capture grounded evidence, judge each element in
- * context, and assemble a report. The result is stored so the agent surfaces can
- * read its findings and evidence by id.
+ * Run an end-to-end investigation: capture grounded evidence, compose the deterministic
+ * axe-core floor with AI quality judgments, and assemble a report. Stored by id so the
+ * agent surfaces can read its findings and evidence.
  */
 export async function investigate(
   input: InvestigateInput,
   opts: InvestigateOptions = {},
 ): Promise<Run> {
   const ai = opts.ai ?? createAIClient();
-  const evidence = input.html ? await captureHtml(input.html, { intent: input.intent }) : [];
-  const verdicts = await judgeEvidence(evidence, ai, input.intent);
+  const namingEvidence = input.html ? await captureHtml(input.html, { intent: input.intent }) : [];
+  const axeEvidence = input.html ? await captureAxe(input.html) : [];
+  const evidence = [...namingEvidence, ...axeEvidence];
+  const verdicts = [
+    ...(await judgeEvidence(namingEvidence, ai, input.intent)),
+    ...axeVerdicts(axeEvidence),
+  ];
   const report = buildReport(verdicts);
   runCounter += 1;
   const run: Run = { id: `run-${runCounter}`, report, evidence };

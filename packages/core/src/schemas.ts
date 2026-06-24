@@ -117,6 +117,16 @@ export const zVisionPayload = z.object({
 });
 export type VisionPayload = z.infer<typeof zVisionPayload>;
 
+/** Deterministic floor evidence: a single axe-core violation (rule + impact + element). */
+export const zAxePayload = z.object({
+  kind: z.literal("axe"),
+  rule: z.string(),
+  impact: z.string(),
+  help: z.string(),
+  selector: z.string(),
+});
+export type AxePayload = z.infer<typeof zAxePayload>;
+
 export const zInteractionType = z.enum([
   "tab",
   "shift-tab",

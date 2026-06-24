@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import {
+  type AxePayload,
   type EvidenceRecord,
   type FocusPayload,
   type Intent,
@@ -11,6 +12,7 @@ import {
   SCHEMA_VERSION,
 } from "@aee/core";
 import { createNamingObserver, groundingObservers } from "@aee/observers";
+import axe from "axe-core";
 import { type Page, chromium } from "@playwright/test";
 import { createClock } from "./clock.js";
 import { PlaywrightDriver } from "./driver.js";
@@ -272,6 +274,53 @@ function readAnnouncement(): string {
     text += ` ${region.textContent ?? ""}`;
   });
   return text.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * The deterministic floor: run axe-core in the page and emit one evidence record per
+ * violation node. These become authoritative verdicts with no AI — the reproducible
+ * baseline beneath the AI quality judgments (axe checks presence/rules, AI checks quality).
+ */
+export async function captureAxe(html: string, opts: { name?: string } = {}): Promise<EvidenceRecord[]> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "load" });
+    await page.evaluate(axe.source);
+    const results = (await page.evaluate(() =>
+      (window as unknown as { axe: { run(): Promise<unknown> } }).axe.run(),
+    )) as {
+      violations: { id: string; impact: string | null; help: string; nodes: { target: string[] }[] }[];
+    };
+    const at = createClock().now();
+    const records: EvidenceRecord[] = [];
+    for (const violation of results.violations) {
+      for (const node of violation.nodes) {
+        interactionCounter += 1;
+        const after: AxePayload = {
+          kind: "axe",
+          rule: violation.id,
+          impact: violation.impact ?? "minor",
+          help: violation.help,
+          selector: node.target.join(" "),
+        };
+        records.push({
+          schemaVersion: SCHEMA_VERSION,
+          interactionId: `${opts.name ?? "axe"}-${interactionCounter}`,
+          at,
+          observer: "axe",
+          before: null,
+          after,
+          changes: [],
+          confidence: "high",
+          source: "observed",
+        });
+      }
+    }
+    return records;
+  } finally {
+    await browser.close();
+  }
 }
 
 /** Whether a Chromium binary is available, so callers/tests can skip when it isn't. */
