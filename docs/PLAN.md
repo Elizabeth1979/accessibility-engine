@@ -1,5 +1,7 @@
 # Accessibility Evidence Engine (AEE) — Scaffold & Architecture Plan
 
+> **Status:** this is the original scaffold-and-architecture plan; "typed stubs" below describes the M0–M6 *scaffold* deliverable. The framework is now implemented end to end (Tiers 1–3 + vision, the axe floor, advisory Tier 5, the engine, the agent surfaces, remediation, the artifact store, and boundary validation). See [`ROADMAP.md`](ROADMAP.md) for current state; the architecture and contracts below remain accurate.
+
 ## TL;DR
 
 - **What:** Create `~/accessibility-engine` — a TypeScript + pnpm-workspace monorepo scaffold for the Accessibility Evidence Engine, an **AI-first** framework that augments existing Playwright tests.

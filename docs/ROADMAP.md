@@ -2,11 +2,11 @@
 
 ## TL;DR
 
-Tier 1 (the naming wedge — alt-text, accessible-name, link-text, heading-structure, form-label) is complete end to end and runs on a local model with no API key. This roadmap takes AEE from "judges five naming concerns" to "an agent can investigate a page, get a graded report with fixes, chat about the findings, and apply remediations." It is six phases (A–F), each leaving a green build and a commit. The next phase is **A: a thin `@aee/engine` orchestrator plus a real `investigate()`**. Key decisions are resolved in the section below — most importantly, the "MCP can't capture" problem is solved with an orchestrator package, not by loosening the evidence-only invariant.
+AEE is now complete end to end and verified on a local model with no API key. An agent can investigate a page (HTML or a URL), get a graded multi-concern report with suggested fixes, chat about the findings grounded in evidence, and apply attribute fixes to source. Coverage spans Tier 1 (the naming wedge), Tier 2 vision (color-alone, focus-visible, text-in-images), Tier 3 dynamic (focus-management, live-region, keyboard-operable), the Tier 4 axe-core floor, and Tier 5 advisory (caption-accuracy, never a certified `PASS`). The `@aee/engine` orchestrator composes capture → judge → report; the agent surfaces (`@aee/mcp`, `@aee/triage`) and remediation (`@aee/fix`) are thin front-ends over it. A content-addressed artifact store keeps screenshots out of the evidence, and runtime schema validation guards every boundary — all without loosening the evidence-only invariant. What remains is genuinely forward-looking (see Future, below).
 
 ## What it will look like
 
-The payoff of Phase A is that `investigate()` returns a real, multi-concern report instead of an empty stub:
+`investigate()` returns a real, multi-concern report:
 
 ```
 AEE · storefront.html                                   local:gemma4:e4b
@@ -33,7 +33,7 @@ The one new dependency edge that makes this possible (and keeps the core invaria
 
 ## Context
 
-Tier 1 proved the thesis: AI elevates each check from "is the attribute present?" to "is it correct in context, and here's a better value." But the agent surfaces (`@aee/mcp`, `@aee/triage`) and remediation (`@aee/fix`) are still stubs, and the package graph deliberately keeps `@aee/mcp` off `@aee/playwright` and `@aee/judges`. So "investigate a target" has nowhere to live today: nothing composes capture + judging + reporting. The engine is that composition layer, and it is what every remaining phase builds on.
+Tier 1 proved the thesis: AI elevates each check from "is the attribute present?" to "is it correct in context, and here's a better value." The package graph deliberately keeps `@aee/mcp` off `@aee/playwright` and `@aee/judges`, so "investigate a target" needed somewhere to live: a layer that composes capture + judging + reporting without letting a surface reach a driver or the judges. `@aee/engine` is that composition layer, and the agent surfaces and remediation are built on it.
 
 ## Constraints (frozen — see CLAUDE.md)
 
@@ -51,22 +51,23 @@ Tier 1 proved the thesis: AI elevates each check from "is the attribute present?
 - **Triage UI → a minimal local web app** over `ask()`/`explain()`, no heavy framework, local-first. It is the most owner-opinion-dependent piece, so it is intentionally late and starts as a thin shell to react to.
 - **Tiers 2–3 → vision + dynamic capture, last.** Color-alone meaning, focus-indicator visibility, and dynamic announcements need element screenshots (the driver already has `screenshot`/`extractImage`) fed to a vision-capable model, plus interaction capture. This needs a vision model — local vision or Claude — which is flagged as a prerequisite when we get there.
 
-## Work split
+## Built
 
-### ▶ This session — Phase A: orchestrator + real investigate
+The phased plan (A–F) is fully implemented, and a follow-up hardening pass closed the gaps between this roadmap and the architecture plan:
 
-- **A1.** Scaffold `@aee/engine` (package.json, tsconfig + project references, deps on core/playwright/observers/judges/ai/reporter).
-- **A2.** Implement `investigate(input, opts) → Report`: capture evidence with `@aee/playwright`, group records by `NamingPayload.kind`, route each group to the matching concern/judge through `@aee/ai`, and aggregate into a `Report` via `@aee/reporter`.
-- **A3.** Wire `@aee/mcp` `investigate`/`findings`/`explain`/`suggestFix` to the engine + the run store; extend `tests/graph-guard.test.js` (engine is the only driver+judges composer; `@aee/mcp` → `@aee/engine`).
-- **A4.** Tests: a gated end-to-end on the local model (investigate the storefront → five verdicts + fixes) and a deterministic engine test with a fixed model.
+- **Engine + investigate** — `@aee/engine` captures, routes each evidence record to its concern's judge, composes the deterministic axe floor with AI quality, and returns a stored `Report`. `investigate` accepts HTML or a URL.
+- **Agent surface** — `@aee/mcp` runs over real `@modelcontextprotocol/sdk` stdio with six tools (investigate, findings, evidence, explain, suggest_fix, apply_fix); `@aee/triage` is a local "chat with your report" shell.
+- **Remediation** — `@aee/fix` turns a suggested fix into a targeted `FixPlan`, applies attribute edits to source, and scaffolds a `gh` PR. Framework-aware source mapping is deferred.
+- **Tiers 2–3** — element-screenshot vision (color-alone, focus-visible, text-in-images) on a multimodal local model, plus dynamic capture (focus-management, live-region, keyboard-operable).
+- **Floor + advisory** — Tier 4 via the axe-core floor; Tier 5 caption-accuracy is advisory and can never certify `PASS`.
+- **Grounding + integrity** — real DOM and accessibility-tree observers, an opt-in virtual-screen-reader observer, a content-addressed artifact store (screenshots by reference), and runtime schema validation at the observer / AI / judge boundaries.
 
-### ▷ Next sessions
+## Future
 
-- **Phase B — real MCP transport:** add `@modelcontextprotocol/sdk`, implement `startServer()` over stdio, register the six tools, smoke against an MCP client.
-- **Phase C — reporter polish:** multi-concern aggregation, release policy (UNKNOWN/advisory → HOLD), JSON + terminal output.
-- **Phase D — agentic fix:** `FixPlan` → patch for locatable elements → `gh` PR, dry-run by default.
-- **Phase E — triage UI:** a local "chat with your report" shell over `ask()`.
-- **Phase F — Tiers 2–3:** element-screenshot + vision + dynamic capture; color-alone, focus visibility, live-region announcements.
+- Framework-aware source mapping for `apply_fix` (JSX / components), beyond id- and attribute-locatable elements.
+- Capture AEE doesn't yet have: network (CDP), audio (for true caption-accuracy), and a real OS-level screen reader.
+- A disk-backed artifact store so persisted / cross-process runs resolve screenshots by reference.
+- Fleshing out the `@aee/triage` UI beyond the thin shell.
 
 ## Reuse
 
@@ -74,11 +75,9 @@ Tier 1 proved the thesis: AI elevates each check from "is the attribute present?
 
 ## Verification
 
-- Phase A: `pnpm test` green; the gated engine e2e produces a five-row report from a live page on the local model; graph-guard passes with the new engine edge and still forbids `@aee/ai` from reaching a driver.
-- Later phases each add their own gated test (transport smoke, fix dry-run patch, etc.).
+- `pnpm test` is green across all packages; the graph-guard enforces every dependency edge — the engine is the only package allowed to reach both a driver and the judges, and `@aee/ai` never reaches a driver or the artifact store.
+- Browser, local-model, and vision paths are covered by gated tests that skip only when Chromium or the local model is unavailable; the gated engine end-to-end produces a multi-row report from a live page on the local model.
 
-## Status — resume here
+## Status
 
-**✅ The entire A–F roadmap is implemented and verified on the local model — no API key.** A (engine + `investigate()`), B (runnable MCP server + docs), C (reporter), D (targeted FixPlans + `gh` PR scaffold), E (local triage UI shell), F — Tier 2 (color-alone, focus-visible) and Tier 3 (focus management, live regions, keyboard operability). **Tier 2 vision works on `gemma4:e4b`, which is multimodal** (`completion, vision, audio, tools, thinking` — confirmed via `ollama show`): `captureVision` screenshots an element and the model judges it. Set `AEE_VISION_MODEL` only to use a different vision model. Every tier's checks run on the default local provider; the only skipped tests are the Claude-gated ones.
-
-Possible follow-ons (not required): Tier 4 (wrap axe-core for exact contrast / ARIA validity — the deterministic floor), Tier 5 (advisory-only caption/plain-language checks), a real evidence/artifact store (screenshots by reference rather than inline base64), URL navigation in `investigate`, and richer source-mapping for `applyFix`.
+**✅ Complete and verified on the local model — no API key.** The A–F roadmap plus the audit-hardening pass (Tier 4 floor, Tier 5 advisory reliability, real DOM/a11y/screen-reader observers, URL navigation, the content-addressed artifact store, and boundary validation) are all implemented. Tier 2 vision runs on `gemma4:e4b`, which is multimodal (`completion, vision, audio, tools, thinking` — confirmed via `ollama show`): `captureVision` screenshots an element and the model judges it; set `AEE_VISION_MODEL` to use a different vision model. Every tier runs on the default local provider; the only skipped tests are the Claude-gated ones. Remaining work is the forward-looking set under **Future**, above.

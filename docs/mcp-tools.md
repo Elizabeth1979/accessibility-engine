@@ -29,19 +29,19 @@ node packages/mcp/dist/bin.js     # or `aee-mcp` once the package is linked/inst
 
 | Tool | Input | Returns |
 | --- | --- | --- |
-| `investigate` | `target` (HTML to capture and judge; URL navigation is a later phase) | A rendered report: one graded verdict per element with a suggested fix. Stores the run. |
+| `investigate` | `target` (HTML to capture and judge, or a URL to navigate to) | A rendered report: one graded verdict per element with a suggested fix. Stores the run. |
 | `findings` | `runId?` (defaults to the latest run) | The run's verdicts (status, reliability, suggested fix, target element). |
 | `evidence` | `runId?` | The captured evidence records behind a run. |
 | `explain` | `question`, `runId?` | A grounded answer drawn only from the run's evidence. |
 | `suggest_fix` | `runId?` | `FixPlan`s for the run's failing findings — element selector, the attribute to set, and before → after. |
-| `apply_fix` | `runId?` | Placeholder (Phase D): AEE emits targeted plans; the agent applies them to source and opens a PR. |
+| `apply_fix` | `source`, `runId?` | Applies the run's fixes to the provided source as safe attribute edits and returns the patched source; non-attribute (text/label) fixes are reported for manual handling. |
 
 ## The intended flow
 
 1. `investigate` a page → a graded report with suggested fixes.
 2. `explain` a finding → understand *why* it failed, grounded in evidence.
 3. `suggest_fix` → get targeted `FixPlan`s (selector + attribute + better value).
-4. The agent applies the fixes to source and opens a PR — AEE provides the plan and a `gh` PR scaffold via `@aee/fix`'s `proposePr`.
+4. `apply_fix` → AEE patches the attribute fixes into the provided source and returns it; non-attribute (text/label) fixes are reported for manual handling, and `@aee/fix`'s `proposePr` scaffolds the `gh` PR commands.
 
 ## Example conversation
 

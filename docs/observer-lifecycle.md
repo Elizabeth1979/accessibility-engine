@@ -20,16 +20,18 @@ An observer that throws (CDP drops, SR session dies) must **not** abort the run 
 
 ## Grounding observers (the evidence the AI needs)
 
-| Observer | Provides | Used by tiers |
-| --- | --- | --- |
-| DOM | structure, attributes, accessible name computation inputs | 1, 3 |
-| Accessibility tree | roles, names, states | 1, 3 |
-| Screenshot | element + context crops | 1, 2 |
-| Image | extracted image bytes for alt-text judging / OCR | 1, 2 |
-| Styles | computed color/contrast/visibility | 2 |
-| Network | request/response correlation | 3 |
-| Virtual screen reader | deterministic announcements (default, CI-safe) | 1, 3 |
-| Real screen reader | high-fidelity announcements (opt-in, gated) | 3 |
+Grounding evidence is not routed to a judge; it grounds the conversational `explain()` surface and makes a run reproducible. Naming-relevant capture (the Tier-1 wedge) lives in the dedicated `naming` observer, and Tier-2 screenshots are captured per element by `captureVision` — so the generic screenshot/image/styles observers below stay deferred rather than re-capture the whole page on every run.
+
+| Observer | Provides | Tiers | Status |
+| --- | --- | --- | --- |
+| DOM | rendered HTML structure + attributes | 1, 3 | **Real** — `domObserver` |
+| Accessibility tree | roles, names, states | 1, 3 | **Real** — `a11yTreeObserver` |
+| Screenshot | element + context crops | 1, 2 | Deferred — per-element `captureVision` is the live Tier-2 path |
+| Image | extracted image bytes for OCR | 1, 2 | Deferred — `naming` covers `img` alt; vision handles bytes |
+| Styles | computed color/contrast/visibility | 2 | Deferred — element-targeted, captured with the targeted checks |
+| Network | request/response correlation | 3 | Deferred — needs CDP / network-event listening |
+| Virtual screen reader | spoken-phrase transcript (jsdom, CI-safe) | 1, 3 | **Real, opt-in** — `createScreenReaderObserver`, not in the default set (a full traversal per capture is heavy) |
+| Real screen reader (OS) | high-fidelity announcements via the OS | 3 | Future — OS-level automation (@guidepup) |
 
 ## Driver seam
 

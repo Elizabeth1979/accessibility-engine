@@ -14,12 +14,12 @@ export interface McpToolSpec {
 
 /** The AEE MCP tool surface (see docs/mcp-tools.md). Names match the registered tools. */
 export const AEE_MCP_TOOLS: McpToolSpec[] = [
-  { name: "investigate", description: "Run an accessibility investigation against HTML (URL navigation is a later phase)." },
+  { name: "investigate", description: "Run an accessibility investigation against HTML or a URL." },
   { name: "findings", description: "List findings for a run (verdict, reliability, suggested fix); defaults to the latest." },
   { name: "evidence", description: "Fetch the evidence records behind a run; defaults to the latest." },
   { name: "explain", description: "Ask a grounded question about a run; answered from evidence only." },
   { name: "suggest_fix", description: "Produce FixPlans (a concrete better value) for a run's failing findings." },
-  { name: "apply_fix", description: "Apply a FixPlan as a safe edit and open a PR via gh (Phase D — not yet implemented)." },
+  { name: "apply_fix", description: "Apply a run's fixes to provided source as safe attribute edits and return the patched source; non-attribute fixes are reported for manual handling." },
 ];
 
 export function listTools(): McpToolSpec[] {
@@ -28,8 +28,9 @@ export function listTools(): McpToolSpec[] {
 
 /** Run an investigation via the engine (capture → judge → report) and store the run. */
 export async function investigate(target: string): Promise<Report> {
-  const html = target.trimStart().startsWith("<") ? target : undefined;
-  const run = await runInvestigation({ html });
+  // A target that starts with "<" is HTML to render; anything else is a URL to navigate to.
+  const input = target.trimStart().startsWith("<") ? { html: target } : { url: target };
+  const run = await runInvestigation(input);
   return run.report;
 }
 
@@ -73,8 +74,8 @@ export function createServer(opts: McpServerOptions = {}): McpServer {
     "investigate",
     {
       title: "Investigate",
-      description: "Run an accessibility investigation. Pass HTML to capture and judge it.",
-      inputSchema: { target: z.string().describe("HTML to investigate (or a URL; navigation is a later phase).") },
+      description: "Run an accessibility investigation. Pass HTML to capture and judge, or a URL to navigate to.",
+      inputSchema: { target: z.string().describe("HTML to investigate, or a URL to navigate to.") },
     },
     async ({ target }) => text(renderTerminalSummary(await investigate(target))),
   );

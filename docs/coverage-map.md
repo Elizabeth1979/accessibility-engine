@@ -2,6 +2,8 @@
 
 AEE tiers every accessibility concern by **what AI actually changes** relative to a static scanner. The tier drives whether a judge leans on the deterministic floor, the AI layer, or both — and how much to trust the result.
 
+> **Implemented today:** Tier 1 in full; Tier 2 color-alone, focus-visible, and text-in-images on a vision model; Tier 3 focus-management, live-region, and keyboard-operable; Tier 4 via the axe-core floor; Tier 5 caption-accuracy as advisory-only (it can never certify `PASS`, and judging accuracy against audio is future work). See [`ROADMAP.md`](ROADMAP.md).
+
 ## Tier 1 — AI transforms binary checks into quality + fix (the wedge)
 
 Static tools check *presence*; AI checks *correctness in context* and drafts a fix.

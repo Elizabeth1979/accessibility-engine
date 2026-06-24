@@ -11,8 +11,8 @@ test("MCP exposes the AEE tool surface", () => {
   assert.ok(tools.some((t) => t.name === "apply_fix"));
 });
 
-test("investigate returns an empty, valid report for a non-HTML target", async () => {
-  const report = await investigate("http://example.test");
+test("investigate returns an empty, valid report for an empty target (no capture)", async () => {
+  const report = await investigate("");
   assert.equal(report.summary.total, 0);
   assert.equal(report.release.decision, "ship");
 });
@@ -28,10 +28,10 @@ test("the MCP server registers its tools and answers over a transport", async ()
     assert.ok(tools.some((t) => t.name === "investigate"));
     assert.ok(tools.some((t) => t.name === "explain"));
 
-    // A round-trip that needs neither a browser nor a model: a non-HTML target → empty report.
+    // A round-trip that needs neither a browser nor a model: an empty target → empty report.
     const result = await client.callTool({
       name: "investigate",
-      arguments: { target: "http://example.test" },
+      arguments: { target: "" },
     });
     assert.ok(Array.isArray(result.content));
     assert.equal(result.content[0]?.type, "text");
