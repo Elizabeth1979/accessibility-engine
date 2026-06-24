@@ -78,22 +78,68 @@ export function proposePr(plans: FixPlan[], opts: { branch?: string } = {}): Pul
   return { branch, title, body, commands };
 }
 
-export interface ApplyOptions {
-  /** Default true: never edit files unless explicitly disabled. */
-  dryRun?: boolean;
+export interface ApplyResult {
+  /** Whether the edit was applied to the source. */
+  applied: boolean;
+  /** The patched source (unchanged if not applied). */
+  source: string;
+  /** What happened, or why it couldn't be auto-applied (with a manual instruction). */
+  detail: string;
+}
+
+/** Attributes applyFix can set directly. Text content and labels are left to manual edits. */
+const SETTABLE_ATTRS = new Set(["alt", "aria-label", "title"]);
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function escapeAttr(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 }
 
 /**
- * Apply a FixPlan. Dry-run (default) returns the precise edit. The real source edit + PR
- * is deferred on purpose: AEE emits a targeted plan and the coding agent applies it to
- * source (JSX/templates), then runs proposePr()'s commands. Auto-editing arbitrary source
- * needs framework-aware mapping (see docs/ROADMAP.md) and is intentionally not faked.
+ * Apply a FixPlan to source HTML. Handles the tractable case the roadmap scopes: setting
+ * an attribute (alt / aria-label / title) on an element located by `#id`. Non-id selectors
+ * and text/label content return applied:false with a manual instruction — framework-aware
+ * source mapping is out of scope. Pure: returns the patched source, writes nothing.
  */
-export async function applyFix(plan: FixPlan, opts: ApplyOptions = {}): Promise<string> {
-  if (opts.dryRun === false) {
-    throw new Error(
-      "applyFix write/PR is deferred: AEE emits a targeted FixPlan; the coding agent applies it to source, then runs proposePr() commands.",
-    );
+export function applyFix(plan: FixPlan, source: string): ApplyResult {
+  const selector = plan.target.selector;
+  const attribute = plan.change.path;
+  const value = plan.suggestedValue;
+  if (!selector || !selector.startsWith("#")) {
+    return { applied: false, source, detail: `Cannot auto-locate ${selector ?? "the element"} (only #id selectors) — apply manually: ${dryRun(plan)}` };
   }
-  return dryRun(plan);
+  if (!SETTABLE_ATTRS.has(attribute)) {
+    return { applied: false, source, detail: `Cannot auto-edit \`${attribute}\` (text/label content) — apply manually: ${dryRun(plan)}` };
+  }
+  const idRe = new RegExp(`\\bid=["']${escapeRegExp(selector.slice(1))}["']`);
+  const tagRe = /<([a-zA-Z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
+  for (let m = tagRe.exec(source); m !== null; m = tagRe.exec(source)) {
+    const full = m[0];
+    const tagName = m[1] ?? "";
+    const rawAttrs = m[2] ?? "";
+    if (!idRe.test(rawAttrs)) continue;
+    const selfClosing = /\/\s*$/.test(rawAttrs);
+    const attrs = (selfClosing ? rawAttrs.replace(/\/\s*$/, "") : rawAttrs).replace(/\s+$/, "");
+    const attrRe = new RegExp(`\\s${escapeRegExp(attribute)}=["'][^"']*["']`);
+    const set = ` ${attribute}="${escapeAttr(value)}"`;
+    const newAttrs = attrRe.test(attrs) ? attrs.replace(attrRe, set) : `${attrs}${set}`;
+    const newTag = `<${tagName}${newAttrs}${selfClosing ? " />" : ">"}`;
+    const patched = source.slice(0, m.index) + newTag + source.slice(m.index + full.length);
+    return { applied: true, source: patched, detail: `Set \`${attribute}\` on ${selector} to ${JSON.stringify(value)}` };
+  }
+  return { applied: false, source, detail: `Element ${selector} not found in source — apply manually: ${dryRun(plan)}` };
+}
+
+/** Apply several plans to one source, in order. Returns the final source + per-plan results. */
+export function applyFixes(plans: FixPlan[], source: string): { source: string; results: ApplyResult[] } {
+  const results: ApplyResult[] = [];
+  let current = source;
+  for (const plan of plans) {
+    const result = applyFix(plan, current);
+    results.push(result);
+    current = result.source;
+  }
+  return { source: current, results };
 }

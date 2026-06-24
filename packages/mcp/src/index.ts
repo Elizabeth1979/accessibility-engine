@@ -1,7 +1,7 @@
 import { createAIClient } from "@aee/ai";
 import type { EvidenceRecord, FixPlan, GroundedAnswer, Report, Verdict } from "@aee/core";
 import { getRun, investigate as runInvestigation, latestRun } from "@aee/engine";
-import { planFix } from "@aee/fix";
+import { applyFixes, planFix, planFixes } from "@aee/fix";
 import { renderTerminalSummary } from "@aee/reporter";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -128,10 +128,16 @@ export function createServer(opts: McpServerOptions = {}): McpServer {
     "apply_fix",
     {
       title: "Apply fix",
-      description: "Apply a FixPlan as a safe edit and open a PR via gh.",
-      inputSchema: { runId: z.string().optional() },
+      description:
+        "Apply a run's fixes to provided source HTML (attribute edits on #id-located elements) and return the patched source. Text/label and non-id fixes are reported for manual handling.",
+      inputSchema: { source: z.string(), runId: z.string().optional() },
     },
-    async () => text("apply_fix is not implemented yet (Phase D)."),
+    async ({ source, runId }) => {
+      const { source: patched, results } = applyFixes(planFixes(findings(runId)), source);
+      const applied = results.filter((r) => r.applied).length;
+      const summary = results.map((r) => `${r.applied ? "✓" : "•"} ${r.detail}`).join("\n");
+      return text(`Applied ${applied}/${results.length} fixes.\n${summary}\n\n--- patched source ---\n${patched}`);
+    },
   );
 
   return server;
