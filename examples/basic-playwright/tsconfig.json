@@ -5,5 +5,5 @@
     "rootDir": "."
   },
   "include": ["*.spec.ts"],
-  "references": [{ "path": "../../packages/playwright" }]
+  "references": [{ "path": "../../packages/engine" }, { "path": "../../packages/playwright" }]
 }

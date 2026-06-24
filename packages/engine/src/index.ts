@@ -131,6 +131,16 @@ export function axeVerdicts(evidence: EvidenceRecord[]): Verdict[] {
 }
 
 /**
+ * Judge a captured evidence set into a report: AI quality for naming / dynamic / vision
+ * records, composed with the deterministic axe floor for "axe" records.
+ */
+export async function judgeRun(evidence: EvidenceRecord[], ai: AIClient, intent?: Intent): Promise<Report> {
+  const axe = evidence.filter((e) => (e.after as { kind?: string } | null)?.kind === "axe");
+  const judged = evidence.filter((e) => (e.after as { kind?: string } | null)?.kind !== "axe");
+  return buildReport([...(await judgeEvidence(judged, ai, intent)), ...axeVerdicts(axe)]);
+}
+
+/**
  * Run an end-to-end investigation: capture grounded evidence, compose the deterministic
  * axe-core floor with AI quality judgments, and assemble a report. Stored by id so the
  * agent surfaces can read its findings and evidence.
@@ -143,11 +153,7 @@ export async function investigate(
   const namingEvidence = input.html ? await captureHtml(input.html, { intent: input.intent }) : [];
   const axeEvidence = input.html ? await captureAxe(input.html) : [];
   const evidence = [...namingEvidence, ...axeEvidence];
-  const verdicts = [
-    ...(await judgeEvidence(namingEvidence, ai, input.intent)),
-    ...axeVerdicts(axeEvidence),
-  ];
-  const report = buildReport(verdicts);
+  const report = await judgeRun(evidence, ai, input.intent);
   runCounter += 1;
   const run: Run = { id: `run-${runCounter}`, report, evidence };
   runs.set(run.id, run);

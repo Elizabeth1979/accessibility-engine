@@ -14,6 +14,7 @@ export {
   chromiumAvailable,
   collectEvidence,
   defaultCaptureObservers,
+  runAxe,
 } from "./capture.js";
 
 export interface CheckpointOptions {

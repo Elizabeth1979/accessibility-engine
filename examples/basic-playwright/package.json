@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Example: attaching AEE to an existing Playwright test with one import swap.",
   "dependencies": {
+    "@aee/engine": "workspace:*",
     "@aee/playwright": "workspace:*"
   },
   "devDependencies": {

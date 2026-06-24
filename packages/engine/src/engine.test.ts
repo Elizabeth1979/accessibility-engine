@@ -10,7 +10,7 @@ import {
   captureVision,
   chromiumAvailable,
 } from "@aee/playwright";
-import { investigate, judgeEvidence } from "./index.js";
+import { investigate, judgeEvidence, judgeRun } from "./index.js";
 
 // Deterministic: routing + per-element judging, no browser and no real model.
 test("judgeEvidence routes each evidence kind to its concern and skips unroutable records", async () => {
@@ -244,6 +244,30 @@ test("captureVision: a removed focus indicator is caught by a vision model", { s
   const ai = createAIClient({ provider: "local", local: { model: visionModel } });
   const verdicts = await judgeEvidence(evidence, ai);
   assert.notEqual(verdicts[0]?.status, "PASS"); // no visible focus indicator is not a PASS
+});
+
+test("judgeRun composes the axe floor with AI quality verdicts", async () => {
+  const ai = createAIClient({
+    model: fixedModel({ verdict: "FAIL", confidence: "high", reason: "generic", suggestedFix: "Open cart drawer" }),
+  });
+  const iconButton = NAMING_FIXTURES.find((f) => f.label.includes("icon button"));
+  assert.ok(iconButton);
+  const axeRecord: EvidenceRecord = {
+    schemaVersion: SCHEMA_VERSION,
+    interactionId: "axe-1",
+    at: 0,
+    observer: "axe",
+    before: null,
+    after: { kind: "axe", rule: "button-name", impact: "critical", help: "Buttons must have discernible text", selector: "#bare" },
+    changes: [],
+    confidence: "high",
+    source: "observed",
+  };
+  const report = await judgeRun([...iconButton.evidence, axeRecord], ai);
+  // AI quality verdict for the captured icon button
+  assert.ok(report.findings.some((v) => v.target?.role === "icon-button" && v.status === "FAIL"));
+  // deterministic axe verdict, composed in the same report
+  assert.ok(report.findings.some((v) => v.reason.startsWith("axe (") && v.target?.role === "button-name"));
 });
 
 const AXE_BAD = `<main><button id="bare"></button><img src="x.png"></main>`;

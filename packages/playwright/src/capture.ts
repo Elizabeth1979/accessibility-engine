@@ -277,47 +277,52 @@ function readAnnouncement(): string {
 }
 
 /**
- * The deterministic floor: run axe-core in the page and emit one evidence record per
- * violation node. These become authoritative verdicts with no AI — the reproducible
- * baseline beneath the AI quality judgments (axe checks presence/rules, AI checks quality).
+ * The deterministic floor: run axe-core on an already-loaded page and emit one evidence
+ * record per violation node. Authoritative verdicts with no AI — the reproducible baseline
+ * beneath the AI quality judgments (axe checks presence/rules, AI checks quality).
  */
+export async function runAxe(page: Page, opts: { name?: string } = {}): Promise<EvidenceRecord[]> {
+  await page.evaluate(axe.source);
+  const results = (await page.evaluate(() =>
+    (window as unknown as { axe: { run(): Promise<unknown> } }).axe.run(),
+  )) as {
+    violations: { id: string; impact: string | null; help: string; nodes: { target: string[] }[] }[];
+  };
+  const at = createClock().now();
+  const records: EvidenceRecord[] = [];
+  for (const violation of results.violations) {
+    for (const node of violation.nodes) {
+      interactionCounter += 1;
+      const after: AxePayload = {
+        kind: "axe",
+        rule: violation.id,
+        impact: violation.impact ?? "minor",
+        help: violation.help,
+        selector: node.target.join(" "),
+      };
+      records.push({
+        schemaVersion: SCHEMA_VERSION,
+        interactionId: `${opts.name ?? "axe"}-${interactionCounter}`,
+        at,
+        observer: "axe",
+        before: null,
+        after,
+        changes: [],
+        confidence: "high",
+        source: "observed",
+      });
+    }
+  }
+  return records;
+}
+
+/** Launch headless Chromium, render the HTML, and run the axe floor on it. */
 export async function captureAxe(html: string, opts: { name?: string } = {}): Promise<EvidenceRecord[]> {
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "load" });
-    await page.evaluate(axe.source);
-    const results = (await page.evaluate(() =>
-      (window as unknown as { axe: { run(): Promise<unknown> } }).axe.run(),
-    )) as {
-      violations: { id: string; impact: string | null; help: string; nodes: { target: string[] }[] }[];
-    };
-    const at = createClock().now();
-    const records: EvidenceRecord[] = [];
-    for (const violation of results.violations) {
-      for (const node of violation.nodes) {
-        interactionCounter += 1;
-        const after: AxePayload = {
-          kind: "axe",
-          rule: violation.id,
-          impact: violation.impact ?? "minor",
-          help: violation.help,
-          selector: node.target.join(" "),
-        };
-        records.push({
-          schemaVersion: SCHEMA_VERSION,
-          interactionId: `${opts.name ?? "axe"}-${interactionCounter}`,
-          at,
-          observer: "axe",
-          before: null,
-          after,
-          changes: [],
-          confidence: "high",
-          source: "observed",
-        });
-      }
-    }
-    return records;
+    return await runAxe(page, opts);
   } finally {
     await browser.close();
   }

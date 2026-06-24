@@ -8,6 +8,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./test": {
+      "types": "./dist/fixture.d.ts",
+      "import": "./dist/fixture.js"
     }
   },
   "files": ["dist"],
@@ -22,5 +26,11 @@
     "@aee/judges": "workspace:*",
     "@aee/ai": "workspace:*",
     "@aee/reporter": "workspace:*"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.40.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0"
   }
 }
