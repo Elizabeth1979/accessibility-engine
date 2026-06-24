@@ -1,3 +1,5 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { createAIClient } from "@aee/ai";
 import type {
   AIClient,
@@ -127,6 +129,29 @@ const runs = new Map<string, Run>();
 let runCounter = 0;
 let lastRunId: string | undefined;
 
+// Optional disk persistence: when AEE_STORE_DIR is set, each run is written as JSON so the agent
+// surfaces (findings / evidence / explain) can read it across processes. Read lazily so the env
+// var can be set at process start. Screenshots live in the artifact store (disk-backed in the same
+// mode); the run JSON carries only light refs, so it stays small.
+function runsDir(): string | undefined {
+  return process.env.AEE_STORE_DIR ? join(process.env.AEE_STORE_DIR, "runs") : undefined;
+}
+
+function persistRun(run: Run): void {
+  const dir = runsDir();
+  if (!dir) return;
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, `${run.id}.json`), JSON.stringify(run));
+  writeFileSync(join(dir, ".latest"), run.id);
+}
+
+function loadRun(id: string): Run | undefined {
+  const dir = runsDir();
+  if (!dir) return undefined;
+  const path = join(dir, `${id}.json`);
+  return existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as Run) : undefined;
+}
+
 const AXE_SEVERITY: Record<string, Severity> = {
   critical: "critical",
   serious: "serious",
@@ -182,15 +207,22 @@ export async function investigate(
   const run: Run = { id: `run-${runCounter}`, report, evidence };
   runs.set(run.id, run);
   lastRunId = run.id;
+  persistRun(run);
   return run;
 }
 
-/** Look up a stored run by id. */
+/** Look up a stored run by id — from memory, or from disk when AEE_STORE_DIR is set. */
 export function getRun(id: string): Run | undefined {
-  return runs.get(id);
+  return runs.get(id) ?? loadRun(id);
 }
 
-/** The most recent run, if any — convenience for single-investigation flows. */
+/** The most recent run, if any — from memory, or the persisted ".latest" marker on disk. */
 export function latestRun(): Run | undefined {
-  return lastRunId ? runs.get(lastRunId) : undefined;
+  if (lastRunId) return runs.get(lastRunId) ?? loadRun(lastRunId);
+  const dir = runsDir();
+  if (dir) {
+    const marker = join(dir, ".latest");
+    if (existsSync(marker)) return loadRun(readFileSync(marker, "utf8").trim());
+  }
+  return undefined;
 }

@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { existsSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { ArtifactStore } from "./artifacts.js";
 
@@ -29,4 +32,25 @@ test("a missing artifact resolves to undefined (never a fabricated blob)", () =>
   assert.equal(store.get("sha256:deadbeef"), undefined);
   assert.equal(store.base64("sha256:deadbeef"), undefined);
   assert.equal(store.has("sha256:deadbeef"), false);
+});
+
+test("a disk-backed store persists blobs and a fresh instance reads them back", () => {
+  const dir = mkdtempSync(join(tmpdir(), "aee-artifacts-"));
+  const writer = new ArtifactStore(dir);
+  const ref = writer.put(new Uint8Array([9, 8, 7, 6]), "image/png");
+  assert.ok(existsSync(join(dir, ref.id.replace(":", "-")))); // content-addressed blob on disk
+
+  const reader = new ArtifactStore(dir); // no shared memory
+  assert.equal(reader.size, 0);
+  assert.ok(reader.has(ref.id));
+  assert.deepEqual([...(reader.get(ref.id)?.bytes ?? [])], [9, 8, 7, 6]);
+  assert.equal(reader.base64(ref.id), Buffer.from([9, 8, 7, 6]).toString("base64"));
+});
+
+test("in-memory stores (no dir) do not share state — no persistence by default", () => {
+  const a = new ArtifactStore();
+  const ref = a.put(new Uint8Array([1, 2, 3]));
+  const b = new ArtifactStore();
+  assert.equal(b.has(ref.id), false);
+  assert.equal(b.get(ref.id), undefined);
 });

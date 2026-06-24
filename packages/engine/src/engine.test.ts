@@ -1,4 +1,7 @@
 import assert from "node:assert/strict";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import { NAMING_FIXTURES, createAIClient, fixedModel } from "@aee/ai";
 import { type EvidenceRecord, SCHEMA_VERSION } from "@aee/core";
@@ -11,7 +14,7 @@ import {
   chromiumAvailable,
   defaultArtifactStore,
 } from "@aee/playwright";
-import { investigate, judgeEvidence, judgeRun, resolveArtifacts } from "./index.js";
+import { getRun, investigate, judgeEvidence, judgeRun, latestRun, resolveArtifacts } from "./index.js";
 
 // Deterministic: routing + per-element judging, no browser and no real model.
 test("judgeEvidence routes each evidence kind to its concern and skips unroutable records", async () => {
@@ -384,4 +387,49 @@ test("judgeRun drops malformed evidence at the boundary (no bogus verdict, no cr
   const report = await judgeRun([good, malformed], ai);
   assert.equal(report.summary.total, 1); // only the well-formed record is judged
   assert.equal(report.findings[0]?.status, "FAIL");
+});
+
+// Opt-in disk persistence (deterministic: empty input means no browser, stub model means no calls).
+test("investigate persists a run to disk when AEE_STORE_DIR is set", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "aee-store-"));
+  const prev = process.env.AEE_STORE_DIR;
+  process.env.AEE_STORE_DIR = dir;
+  try {
+    const run = await investigate({}); // empty input → no capture, empty report, no model call
+    const file = join(dir, "runs", `${run.id}.json`);
+    assert.ok(existsSync(file)); // the run is on disk as JSON
+    assert.equal(JSON.parse(readFileSync(file, "utf8")).id, run.id);
+    assert.equal(readFileSync(join(dir, "runs", ".latest"), "utf8").trim(), run.id); // latest marker
+    assert.equal(getRun(run.id)?.id, run.id);
+    assert.equal(latestRun()?.id, run.id);
+  } finally {
+    if (prev === undefined) delete process.env.AEE_STORE_DIR;
+    else process.env.AEE_STORE_DIR = prev;
+  }
+});
+
+test("getRun loads a run from disk on an in-memory miss (cross-process)", () => {
+  const dir = mkdtempSync(join(tmpdir(), "aee-store-"));
+  const prev = process.env.AEE_STORE_DIR;
+  process.env.AEE_STORE_DIR = dir;
+  try {
+    mkdirSync(join(dir, "runs"), { recursive: true });
+    const synthetic = {
+      id: "run-fromdisk",
+      report: {
+        schemaVersion: SCHEMA_VERSION,
+        summary: { total: 0, pass: 0, fail: 0, warn: 0, unknown: 0 },
+        findings: [],
+        release: { decision: "ship", fails: 0, unknowns: 0, reason: "no findings" },
+      },
+      evidence: [],
+    };
+    writeFileSync(join(dir, "runs", "run-fromdisk.json"), JSON.stringify(synthetic));
+    // "run-fromdisk" was never created in this process → it can only come from disk.
+    assert.equal(getRun("run-fromdisk")?.id, "run-fromdisk");
+    assert.equal(getRun("run-fromdisk")?.report.summary.total, 0);
+  } finally {
+    if (prev === undefined) delete process.env.AEE_STORE_DIR;
+    else process.env.AEE_STORE_DIR = prev;
+  }
 });
