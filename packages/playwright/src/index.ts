@@ -9,6 +9,7 @@ export {
   captureInteraction,
   captureKeyboard,
   captureLiveRegion,
+  captureVision,
   chromiumAvailable,
   collectEvidence,
   defaultCaptureObservers,

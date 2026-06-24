@@ -11,7 +11,9 @@ import type {
 import {
   accessibleNameJudge,
   altTextJudge,
+  colorAloneJudge,
   focusManagementJudge,
+  focusVisibleJudge,
   formLabelJudge,
   headingStructureJudge,
   keyboardOperableJudge,
@@ -35,6 +37,8 @@ const ROUTES: Record<string, { concern: string; judge: Judge }> = {
   "focus-change": { concern: "focus-management", judge: focusManagementJudge },
   "live-region": { concern: "live-region", judge: liveRegionJudge },
   keyboard: { concern: "keyboard-operable", judge: keyboardOperableJudge },
+  "color-alone": { concern: "color-alone", judge: colorAloneJudge },
+  "focus-visible": { concern: "focus-visible", judge: focusVisibleJudge },
 };
 
 /** Best-effort element identity from a payload (naming uses `selector`, dynamic uses `trigger`). */

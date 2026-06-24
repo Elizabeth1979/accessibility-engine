@@ -22,6 +22,10 @@ const CONCERN_GUIDANCE: Record<string, string> = {
     "For live regions specifically: when an interaction changes page content the user did not navigate to (domChanged is true) — a status, error, count, or result — that change must be announced via a live region (aria-live / role=status / role=alert). If domChanged is true and `announcement` is empty, screen-reader users miss the update: FAIL. If it was announced, judge whether the announcement is meaningful. If the change was instead handled by moving keyboard focus into new content (focusBefore differs from focusAfter), a live region is not required: PASS.",
   "keyboard-operable":
     "For keyboard operability specifically: any control that works with a mouse must also work with the keyboard. If activatesOnClick is true (the control does something on click) but it is not focusable, or pressing Enter does nothing (activatesOnKey is false), the control is mouse-only — keyboard and screen-reader users cannot operate it: FAIL. A native button, or a div with role=button + tabindex + a key handler, is PASS.",
+  "color-alone":
+    "For color-alone specifically: judge the SCREENSHOT. Information must not be conveyed by color alone. If a state (error, success, required, selected, a link) is distinguished ONLY by color — no text label, icon, underline, or shape — then users who can't perceive that color miss it: FAIL. If there is a non-color cue as well, PASS.",
+  "focus-visible":
+    "For focus visibility specifically: judge the SCREENSHOT of the focused element. A keyboard-focused element must have a clearly visible focus indicator (outline, ring, or other obvious styling). If there is no visible indicator — e.g. the outline was removed — keyboard users can't tell where they are: FAIL. A clear, sufficiently contrasting indicator is PASS.",
 };
 
 export function buildSystemPrompt(concern: string): string {

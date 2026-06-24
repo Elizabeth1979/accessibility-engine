@@ -7,6 +7,7 @@ import {
   type KeyboardPayload,
   type LiveRegionPayload,
   type Observer,
+  type VisionPayload,
   SCHEMA_VERSION,
 } from "@aee/core";
 import { createNamingObserver, groundingObservers } from "@aee/observers";
@@ -210,6 +211,54 @@ export async function captureKeyboard(
       activatesOnClick,
     };
     return [interactionRecord(after, null, clock, opts.name)];
+  } finally {
+    await browser.close();
+  }
+}
+
+/**
+ * Capture an element's rendered screenshot for a Tier 2 vision check. For focus-visible,
+ * pass focus:true to focus the element first so the focus indicator is in the shot. Emits
+ * a vision record carrying a base64 PNG that the engine routes to the vision concern.
+ */
+export async function captureVision(
+  html: string,
+  opts: {
+    selector: string;
+    kind: VisionPayload["kind"];
+    context?: string;
+    focus?: boolean;
+    name?: string;
+  },
+): Promise<EvidenceRecord[]> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "load" });
+    const clock = createClock();
+    if (opts.focus) await page.focus(opts.selector).catch(() => {});
+    const buffer = await page.locator(opts.selector).screenshot();
+    interactionCounter += 1;
+    const after: VisionPayload = {
+      kind: opts.kind,
+      selector: opts.selector,
+      context: opts.context ?? "",
+      screenshot: buffer.toString("base64"),
+      mediaType: "image/png",
+    };
+    return [
+      {
+        schemaVersion: SCHEMA_VERSION,
+        interactionId: `${opts.name ?? "vision"}-${interactionCounter}`,
+        at: clock.now(),
+        observer: "vision",
+        before: null,
+        after,
+        changes: [],
+        confidence: "high",
+        source: "observed",
+      },
+    ];
   } finally {
     await browser.close();
   }

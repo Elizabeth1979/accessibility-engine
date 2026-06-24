@@ -6,6 +6,7 @@ import {
   captureInteraction,
   captureKeyboard,
   captureLiveRegion,
+  captureVision,
   chromiumAvailable,
 } from "@aee/playwright";
 import { investigate, judgeEvidence } from "./index.js";
@@ -191,4 +192,42 @@ test("captureKeyboard: a native button is keyboard-operable (local model)", { sk
   assert.equal(after.activatesOnKey, true); // Enter activates the button
   const verdicts = await judgeEvidence(evidence, createAIClient({ provider: "local" }));
   assert.notEqual(verdicts[0]?.status, "FAIL"); // keyboard-operable is not a failure
+});
+
+const COLOR_ONLY = `<main><span id="status" style="color:#d00">Payment failed</span></main>`;
+
+test("captureVision captures an element screenshot as base64", {
+  skip: chromiumAvailable() ? false : "no Chromium browser available",
+}, async () => {
+  const evidence = await captureVision(COLOR_ONLY, {
+    selector: "#status",
+    kind: "color-alone",
+    context: "the only error cue is the red text colour",
+  });
+  assert.equal(evidence.length, 1);
+  const after = evidence[0]?.after as { kind: string; screenshot: string };
+  assert.equal(after.kind, "color-alone");
+  assert.ok(after.screenshot.length > 100); // a real base64 PNG
+});
+
+// Vision judging needs a vision-capable model. Gated on AEE_VISION_MODEL (a local vision
+// model, e.g. llava) so it skips until one is configured — gemma4:e4b is text-only.
+const visionModel = process.env.AEE_VISION_MODEL;
+const visionSkip: false | string = !chromiumAvailable()
+  ? "no Chromium browser available"
+  : !visionModel
+    ? "AEE_VISION_MODEL not set"
+    : (await localModelReachable())
+      ? false
+      : "no local model server reachable";
+
+test("captureVision: color-only information is caught by a vision model", { skip: visionSkip }, async () => {
+  const evidence = await captureVision(COLOR_ONLY, {
+    selector: "#status",
+    kind: "color-alone",
+    context: "the only error cue is the red text colour",
+  });
+  const ai = createAIClient({ provider: "local", local: { model: visionModel } });
+  const verdicts = await judgeEvidence(evidence, ai);
+  assert.notEqual(verdicts[0]?.status, "PASS");
 });
