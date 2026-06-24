@@ -79,9 +79,10 @@ pnpm build       # tsc -b across all packages
 pnpm typecheck
 pnpm test        # node --test over built dist/
 pnpm gen:schemas # regenerate JSON Schema in /schemas from the zod source
+pnpm demo        # investigate a sample page and print the graded report
 ```
 
-Requires Node ≥ 22 and pnpm.
+Requires Node ≥ 22 and pnpm. `pnpm demo` needs Chromium (`pnpm exec playwright install chromium`); set `AEE_LLM_PROVIDER=local` (with a local server running) to judge for real — otherwise AI verdicts are `UNKNOWN` and the axe floor still reports.
 
 ## Model backends (no API key required)
 

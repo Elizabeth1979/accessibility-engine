@@ -14,12 +14,15 @@
     "typecheck": "tsc -b",
     "clean": "tsc -b --clean",
     "test": "pnpm build && node --test \"packages/*/dist/**/*.test.js\" \"tests/*.test.js\"",
-    "gen:schemas": "pnpm build && node packages/core/dist/gen-schemas.js"
+    "gen:schemas": "pnpm build && node packages/core/dist/gen-schemas.js",
+    "demo": "pnpm build && node scripts/demo.mjs"
   },
   "devDependencies": {
     "@aee/ai": "workspace:*",
+    "@aee/engine": "workspace:*",
     "@aee/judges": "workspace:*",
     "@aee/playwright": "workspace:*",
+    "@aee/reporter": "workspace:*",
     "@types/node": "^22.10.0",
     "typescript": "^5.7.2",
     "zod-to-json-schema": "^3.24.1"

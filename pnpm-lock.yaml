@@ -11,12 +11,18 @@ importers:
       '@aee/ai':
         specifier: workspace:*
         version: link:packages/ai
+      '@aee/engine':
+        specifier: workspace:*
+        version: link:packages/engine
       '@aee/judges':
         specifier: workspace:*
         version: link:packages/judges
       '@aee/playwright':
         specifier: workspace:*
         version: link:packages/playwright
+      '@aee/reporter':
+        specifier: workspace:*
+        version: link:packages/reporter
       '@types/node':
         specifier: ^22.10.0
         version: 22.20.0
