@@ -22,7 +22,7 @@ import {
   linkTextJudge,
   liveRegionJudge,
 } from "@aee/judges";
-import { captureAxe, captureHtml } from "@aee/playwright";
+import { capturePage } from "@aee/playwright";
 import { buildReport } from "@aee/reporter";
 
 /**
@@ -82,8 +82,10 @@ export async function judgeEvidence(
 }
 
 export interface InvestigateInput {
-  /** HTML to render and investigate. (URL navigation is a later phase.) */
+  /** HTML to render and investigate. */
   html?: string;
+  /** URL to navigate to and investigate (alternative to html). */
+  url?: string;
   /** Declared page intent, fed to the AI to ground judgments. */
   intent?: Intent;
 }
@@ -150,9 +152,7 @@ export async function investigate(
   opts: InvestigateOptions = {},
 ): Promise<Run> {
   const ai = opts.ai ?? createAIClient();
-  const namingEvidence = input.html ? await captureHtml(input.html, { intent: input.intent }) : [];
-  const axeEvidence = input.html ? await captureAxe(input.html) : [];
-  const evidence = [...namingEvidence, ...axeEvidence];
+  const evidence = input.html || input.url ? await capturePage(input) : [];
   const report = await judgeRun(evidence, ai, input.intent);
   runCounter += 1;
   const run: Run = { id: `run-${runCounter}`, report, evidence };

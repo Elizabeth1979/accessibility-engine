@@ -10,6 +10,7 @@ export {
   captureInteraction,
   captureKeyboard,
   captureLiveRegion,
+  capturePage,
   captureVision,
   chromiumAvailable,
   collectEvidence,

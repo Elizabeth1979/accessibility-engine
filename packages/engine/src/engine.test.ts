@@ -304,3 +304,14 @@ test("investigate composes the axe floor with AI quality (local model)", { skip 
     "AI should flag the meaningless alt that axe lets pass",
   );
 });
+
+test("investigate navigates a URL and reports (local model)", { skip }, async () => {
+  const html = `<main><h1>Shop</h1><img id="coat" alt="image" src="x.png"><button id="bare"></button></main>`;
+  const run = await investigate(
+    { url: `data:text/html,${encodeURIComponent(html)}` },
+    { ai: createAIClient({ provider: "local" }) },
+  );
+  assert.ok(run.report.summary.total >= 2, `expected findings from the URL, got ${run.report.summary.total}`);
+  // the deterministic axe floor applies over a navigated page too
+  assert.ok(run.report.findings.some((v) => v.reason.startsWith("axe (")));
+});

@@ -78,6 +78,32 @@ export async function captureHtml(
   }
 }
 
+/**
+ * Launch headless Chromium, load HTML or navigate to a URL, and capture both the naming
+ * evidence and the deterministic axe floor on the same page in one pass.
+ */
+export async function capturePage(input: {
+  html?: string;
+  url?: string;
+  name?: string;
+  intent?: Intent;
+}): Promise<EvidenceRecord[]> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    if (input.url) await page.goto(input.url, { waitUntil: "load" });
+    else await page.setContent(input.html ?? "", { waitUntil: "load" });
+    const naming = await collectEvidence(page, defaultCaptureObservers(), {
+      name: input.name,
+      intent: input.intent,
+    });
+    const axe = await runAxe(page, { name: input.name });
+    return [...naming, ...axe];
+  } finally {
+    await browser.close();
+  }
+}
+
 /** Focus the trigger, activate it, and observe the focus / DOM / announcement outcome. */
 async function performInteraction(page: Page, driver: PlaywrightDriver, trigger: string) {
   await page.focus(trigger).catch(() => {});
