@@ -90,3 +90,38 @@ test("a vision evidence screenshot is passed to the model as an image", async ()
   assert.equal(promptHadBase64, false); // and did not pollute the text prompt
   assert.equal(verdict.verdict, "FAIL");
 });
+
+test("Tier 5 caption-accuracy is advisory: a model PASS is downgraded to UNKNOWN", async () => {
+  // Even when the model is confident, AEE cannot certify caption accuracy without the audio,
+  // so the concern is advisory and the integrity guard blocks the PASS — never a false green.
+  const ai = createAIClient({
+    model: fixedModel({ verdict: "PASS", confidence: "high", reason: "captions present" }),
+  });
+  const evidence = [
+    {
+      schemaVersion: SCHEMA_VERSION,
+      interactionId: "cap-1",
+      at: 0,
+      observer: "captions",
+      before: null,
+      after: { kind: "captions", track: "captions", label: "English" },
+      changes: [],
+      confidence: "high" as const,
+      source: "observed" as const,
+    },
+  ];
+  const verdict = await ai.judge("caption-accuracy", evidence);
+  assert.equal(verdict.reliability, "advisory");
+  assert.equal(verdict.verdict, "UNKNOWN");
+});
+
+test("authoritative concerns keep a confident PASS (e.g. alt-text)", async () => {
+  const ai = createAIClient({
+    model: fixedModel({ verdict: "PASS", confidence: "high", reason: "alt conveys the image" }),
+  });
+  const fixture = NAMING_FIXTURES.find((f) => f.label.includes("icon button"));
+  assert.ok(fixture);
+  const verdict = await ai.judge("alt-text", fixture.evidence);
+  assert.equal(verdict.reliability, "authoritative");
+  assert.equal(verdict.verdict, "PASS"); // a verifiable concern is not downgraded
+});

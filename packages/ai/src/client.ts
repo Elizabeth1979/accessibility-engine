@@ -26,6 +26,14 @@ import {
  * Integrity guard: an advisory judgment may never assert a confident PASS.
  * If the model returns PASS on an advisory-tier concern, downgrade to UNKNOWN.
  */
+/**
+ * Concerns AEE can only ADVISE on, never certify (Tier 5): caption accuracy, plain-language
+ * adequacy, "will a real assistive-tech user actually succeed". These are judged advisory
+ * regardless of the client default, so the integrity guard downgrades any PASS to UNKNOWN —
+ * AEE never green-lights what it cannot verify from the captured evidence.
+ */
+const ADVISORY_CONCERNS = new Set(["caption-accuracy"]);
+
 /** Pull base64 screenshots out of vision evidence to send as images to the model. */
 function collectImages(evidence: EvidenceRecord[]): ImageInput[] {
   const images: ImageInput[] = [];
@@ -107,7 +115,9 @@ export class ConcernAIClient implements AIClient {
       buildUserPrompt(evidence.map(stripImage), intent),
       images.length > 0 ? images : undefined,
     );
-    return toJudgment(assessment, evidence, this.#reliability);
+    // Tier 5 concerns are advisory no matter the client default — the guard then blocks a PASS.
+    const reliability = ADVISORY_CONCERNS.has(concern) ? "advisory" : this.#reliability;
+    return toJudgment(assessment, evidence, reliability);
   }
 
   async explain(question: string, evidence: EvidenceRecord[]): Promise<GroundedAnswer> {
