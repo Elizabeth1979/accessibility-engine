@@ -21,6 +21,7 @@ import {
   keyboardOperableJudge,
   linkTextJudge,
   liveRegionJudge,
+  textInImagesJudge,
 } from "@aee/judges";
 import { capturePage } from "@aee/playwright";
 import { buildReport } from "@aee/reporter";
@@ -41,6 +42,7 @@ const ROUTES: Record<string, { concern: string; judge: Judge }> = {
   keyboard: { concern: "keyboard-operable", judge: keyboardOperableJudge },
   "color-alone": { concern: "color-alone", judge: colorAloneJudge },
   "focus-visible": { concern: "focus-visible", judge: focusVisibleJudge },
+  "text-in-images": { concern: "text-in-images", judge: textInImagesJudge },
 };
 
 /** Best-effort element identity from a payload (naming uses `selector`, dynamic uses `trigger`). */

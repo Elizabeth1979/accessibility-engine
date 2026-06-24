@@ -46,6 +46,7 @@ export const headingStructureJudge = stubJudge("heading-structure", 1);
 // Tier 2 — AI sees what static rules are blind to.
 export const colorAloneJudge = stubJudge("color-alone", 2);
 export const focusVisibleJudge = stubJudge("focus-visible", 2);
+export const textInImagesJudge = stubJudge("text-in-images", 2);
 
 // Tier 3 — AI + runtime evidence (dynamic).
 export const focusManagementJudge = stubJudge("focus-management", 3);
@@ -67,6 +68,7 @@ export const allJudges: Judge[] = [
   headingStructureJudge,
   colorAloneJudge,
   focusVisibleJudge,
+  textInImagesJudge,
   focusManagementJudge,
   liveRegionJudge,
   keyboardOperableJudge,

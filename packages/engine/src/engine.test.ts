@@ -315,3 +315,16 @@ test("investigate navigates a URL and reports (local model)", { skip }, async ()
   // the deterministic axe floor applies over a navigated page too
   assert.ok(run.report.findings.some((v) => v.reason.startsWith("axe (")));
 });
+
+test("captureVision: text baked into an image is caught by a vision model", { skip: visionSkip }, async () => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="80"><rect width="320" height="80" fill="#eee"/><text x="16" y="50" font-size="30" fill="#111">SALE 50% OFF</text></svg>`;
+  const html = `<main><img id="banner" width="320" height="80" alt="" src="data:image/svg+xml,${encodeURIComponent(svg)}"></main>`;
+  const evidence = await captureVision(html, {
+    selector: "#banner",
+    kind: "text-in-images",
+    context: "promotional banner image",
+  });
+  const ai = createAIClient({ provider: "local", local: { model: visionModel } });
+  const verdicts = await judgeEvidence(evidence, ai);
+  assert.notEqual(verdicts[0]?.status, "PASS"); // text baked into the image is not a PASS
+});

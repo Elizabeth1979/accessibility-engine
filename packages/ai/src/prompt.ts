@@ -26,6 +26,8 @@ const CONCERN_GUIDANCE: Record<string, string> = {
     "For color-alone specifically: judge the SCREENSHOT. Information must not be conveyed by color alone. If a state (error, success, required, selected, a link) is distinguished ONLY by color — no text label, icon, underline, or shape — then users who can't perceive that color miss it: FAIL. If there is a non-color cue as well, PASS.",
   "focus-visible":
     "For focus visibility specifically: judge the SCREENSHOT of the focused element. A keyboard-focused element must have a clearly visible focus indicator (outline, ring, or other obvious styling). If there is no visible indicator — e.g. the outline was removed — keyboard users can't tell where they are: FAIL. A clear, sufficiently contrasting indicator is PASS.",
+  "text-in-images":
+    "For text-in-images specifically: judge the SCREENSHOT. Meaningful text baked into an image (a banner, button, or promo whose words are pixels, not real text) can't be resized, recoloured, translated, or read by a screen reader: FAIL, and the fix is real HTML text. A logo or wordmark is acceptable. No baked-in text is PASS.",
 };
 
 export function buildSystemPrompt(concern: string): string {
