@@ -28,6 +28,8 @@ const CONCERN_GUIDANCE: Record<string, string> = {
     "For focus visibility specifically: judge the SCREENSHOT of the focused element. A keyboard-focused element must have a clearly visible focus indicator (outline, ring, or other obvious styling). If there is no visible indicator — e.g. the outline was removed — keyboard users can't tell where they are: FAIL. A clear, sufficiently contrasting indicator is PASS.",
   "text-in-images":
     "For text-in-images specifically: judge the SCREENSHOT. Meaningful text baked into an image (a banner, button, or promo whose words are pixels, not real text) can't be resized, recoloured, translated, or read by a screen reader: FAIL, and the fix is real HTML text. A logo or wordmark is acceptable. No baked-in text is PASS.",
+  "network-error":
+    "For network errors specifically: when an interaction triggers a request that fails (any request with `failed` true, or a status of 400 or above) the failure MUST be communicated to assistive tech — announced via a live region, or focus moved to a meaningful error. If a request failed and `announcement` is empty and `domChanged` did not surface an error, the failure is silent and screen-reader users believe the action succeeded: FAIL, and the fix is to announce an actionable error. If the failure was announced, judge whether that message is meaningful and actionable. If no request failed, PASS.",
 };
 
 export function buildSystemPrompt(concern: string): string {

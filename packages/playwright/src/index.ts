@@ -11,6 +11,7 @@ export {
   captureInteraction,
   captureKeyboard,
   captureLiveRegion,
+  captureNetwork,
   capturePage,
   captureVision,
   chromiumAvailable,

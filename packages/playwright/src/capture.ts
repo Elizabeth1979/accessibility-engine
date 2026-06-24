@@ -7,6 +7,7 @@ import {
   type Interaction,
   type KeyboardPayload,
   type LiveRegionPayload,
+  type NetworkPayload,
   type Observer,
   type VisionPayload,
   SCHEMA_VERSION,
@@ -123,7 +124,7 @@ async function performInteraction(page: Page, driver: PlaywrightDriver, trigger:
 }
 
 function interactionRecord(
-  after: FocusPayload | LiveRegionPayload | KeyboardPayload,
+  after: FocusPayload | LiveRegionPayload | KeyboardPayload | NetworkPayload,
   focusBefore: string | null,
   clock: { now(): number },
   name: string | undefined,
@@ -196,6 +197,55 @@ export async function captureLiveRegion(
       announcement: outcome.announcement,
     };
     return [interactionRecord(after, outcome.focusBefore, clock, opts.name)];
+  } finally {
+    await browser.close();
+  }
+}
+
+/**
+ * Capture the network requests an interaction fires and whether the outcome is announced.
+ * Attaches response / requestfailed listeners, activates the trigger, lets the page settle, and
+ * records each request's outcome plus any live-region announcement, as a "network" record the
+ * engine routes to the network-error concern (Tier 3). `setup` runs before the interaction — e.g.
+ * to stub endpoints with `page.route` in tests, so no real network egress is needed.
+ */
+export async function captureNetwork(
+  html: string,
+  opts: { trigger: string; name?: string; intent?: Intent; setup?: (page: Page) => Promise<unknown> },
+): Promise<EvidenceRecord[]> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "load" });
+    if (opts.setup) await opts.setup(page); // result ignored; e.g. page.route returns a disposable
+    const driver = new PlaywrightDriver(page);
+    const clock = createClock();
+
+    const requests: NetworkPayload["requests"] = [];
+    page.on("response", (res) => {
+      requests.push({ method: res.request().method(), url: res.url(), status: res.status(), failed: false });
+    });
+    page.on("requestfailed", (req) => {
+      requests.push({ method: req.method(), url: req.url(), status: 0, failed: true });
+    });
+
+    await page.focus(opts.trigger).catch(() => {});
+    const domBefore = String(await driver.snapshotDom());
+    await page.click(opts.trigger);
+    await page.waitForLoadState("networkidle", { timeout: 2000 }).catch(() => {}); // bounded settle
+    await page.waitForTimeout(50);
+    const domChanged = String(await driver.snapshotDom()) !== domBefore;
+    const announcement =
+      (await driver.eval<string>(`(${readAnnouncement.toString()})()`)) || undefined;
+
+    const after: NetworkPayload = {
+      kind: "network",
+      trigger: opts.trigger,
+      requests,
+      domChanged,
+      announcement,
+    };
+    return [interactionRecord(after, null, clock, opts.name)];
   } finally {
     await browser.close();
   }

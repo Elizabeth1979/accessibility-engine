@@ -10,6 +10,7 @@ import {
   captureInteraction,
   captureKeyboard,
   captureLiveRegion,
+  captureNetwork,
   captureVision,
   chromiumAvailable,
   defaultArtifactStore,
@@ -432,4 +433,36 @@ test("getRun loads a run from disk on an in-memory miss (cross-process)", () => 
     if (prev === undefined) delete process.env.AEE_STORE_DIR;
     else process.env.AEE_STORE_DIR = prev;
   }
+});
+
+// Future item 1 — network (CDP) capture. A button whose save request fails (stubbed 500) but
+// announces nothing: a silent failure for assistive-tech users. page.route keeps it hermetic.
+const SILENT_FETCH = `<main>
+  <button id="save" onclick="fetch('https://api.example.test/save',{method:'POST'}).catch(()=>{})">Save</button>
+  <div id="status" aria-live="polite"></div>
+</main>`;
+// page.route keeps it hermetic: the save request is fulfilled with a 500, no real egress.
+const stub500: Parameters<typeof captureNetwork>[1]["setup"] = (page) =>
+  page.route("**/save", (route) => route.fulfill({ status: 500, body: "" }));
+
+test("captureNetwork records a failed request and whether it was announced", {
+  skip: chromiumAvailable() ? false : "no Chromium browser available",
+}, async () => {
+  const evidence = await captureNetwork(SILENT_FETCH, { trigger: "#save", setup: stub500 });
+  assert.equal(evidence.length, 1);
+  const after = evidence[0]?.after as {
+    kind: string;
+    requests: { status: number; failed: boolean }[];
+    announcement?: string;
+  };
+  assert.equal(after.kind, "network");
+  assert.ok(after.requests.some((r) => r.status >= 400 || r.failed)); // the failed save was captured
+  assert.equal(after.announcement, undefined); // silent — nothing was announced
+});
+
+test("networkErrorJudge: a silent network failure is caught (local model)", { skip }, async () => {
+  const evidence = await captureNetwork(SILENT_FETCH, { trigger: "#save", setup: stub500 });
+  const verdicts = await judgeEvidence(evidence, createAIClient({ provider: "local" }));
+  assert.equal(verdicts.length, 1);
+  assert.notEqual(verdicts[0]?.status, "PASS"); // a failure nobody announced is not a PASS
 });

@@ -107,6 +107,27 @@ export const zKeyboardPayload = z.object({
 export type KeyboardPayload = z.infer<typeof zKeyboardPayload>;
 
 /**
+ * Dynamic (Tier 3) evidence for network error handling: the requests an interaction fired and
+ * their outcomes, plus whether the result was announced. Judged for whether a failed request is
+ * communicated accessibly (a silent failure leaves screen-reader users thinking the action worked).
+ */
+export const zNetworkPayload = z.object({
+  kind: z.literal("network"),
+  trigger: z.string(),
+  requests: z.array(
+    z.object({
+      method: z.string(),
+      url: z.string(),
+      status: z.number().int(),
+      failed: z.boolean(),
+    }),
+  ),
+  domChanged: z.boolean(),
+  announcement: z.string().optional(),
+});
+export type NetworkPayload = z.infer<typeof zNetworkPayload>;
+
+/**
  * Tier 2 vision evidence: a rendered screenshot judged for what static rules can't see.
  * The heavy bytes live in the content-addressed artifact store, referenced by `artifact`;
  * the persisted evidence stays light. `screenshot` (base64) is absent at rest and inlined
@@ -198,6 +219,7 @@ export const zEvidencePayload = z.union([
   zFocusPayload,
   zLiveRegionPayload,
   zKeyboardPayload,
+  zNetworkPayload,
   zVisionPayload,
   zAxePayload,
   zGroundingPayload,

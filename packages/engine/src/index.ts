@@ -24,6 +24,7 @@ import {
   keyboardOperableJudge,
   linkTextJudge,
   liveRegionJudge,
+  networkErrorJudge,
   textInImagesJudge,
 } from "@aee/judges";
 import { capturePage, defaultArtifactStore } from "@aee/playwright";
@@ -43,6 +44,7 @@ const ROUTES: Record<string, { concern: string; judge: Judge }> = {
   "focus-change": { concern: "focus-management", judge: focusManagementJudge },
   "live-region": { concern: "live-region", judge: liveRegionJudge },
   keyboard: { concern: "keyboard-operable", judge: keyboardOperableJudge },
+  network: { concern: "network-error", judge: networkErrorJudge },
   "color-alone": { concern: "color-alone", judge: colorAloneJudge },
   "focus-visible": { concern: "focus-visible", judge: focusVisibleJudge },
   "text-in-images": { concern: "text-in-images", judge: textInImagesJudge },

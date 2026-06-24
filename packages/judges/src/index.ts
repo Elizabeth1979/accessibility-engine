@@ -52,6 +52,7 @@ export const textInImagesJudge = stubJudge("text-in-images", 2);
 export const focusManagementJudge = stubJudge("focus-management", 3);
 export const liveRegionJudge = stubJudge("live-region", 3);
 export const keyboardOperableJudge = stubJudge("keyboard-operable", 3);
+export const networkErrorJudge = stubJudge("network-error", 3);
 
 // Tier 4 — deterministic floor (axe-core); AI adds nothing here.
 export const contrastJudge = stubJudge("contrast", 4);
@@ -72,6 +73,7 @@ export const allJudges: Judge[] = [
   focusManagementJudge,
   liveRegionJudge,
   keyboardOperableJudge,
+  networkErrorJudge,
   contrastJudge,
   ariaValidityJudge,
   captionAccuracyJudge,
