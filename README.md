@@ -1,5 +1,7 @@
 # Accessibility Evidence Engine (AEE)
 
+[![CI](https://github.com/Elizabeth1979/accessibility-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/Elizabeth1979/accessibility-engine/actions/workflows/ci.yml)
+
 **AI-first accessibility testing that augments your existing Playwright tests.**
 
 > axe tells you the `alt` attribute exists. **AEE tells you whether the alt text is _right_ — and writes you a better one.**
@@ -8,7 +10,7 @@ Static scanners (axe-core) answer *"is the attribute present?"* and top out arou
 
 AEE is **agent-native**: you operate it by chat through an MCP server (run investigations, query the evidence, apply fixes), declare a page's **intent** in plain language to sharpen judgments, chat with the report locally, and let it open remediation PRs.
 
-> ⚠️ **Status: pre-alpha.** The **Tier-1 naming / alt-text wedge works end to end** — a live Playwright page is captured to evidence and judged (with a suggested fix) by Claude **or a local model, no API key**. Broader coverage and the agent surfaces (MCP, triage, fix) are still typed **stubs**. See [`docs/PLAN.md`](docs/PLAN.md) for the plan and milestones.
+> **Status:** implemented end to end and verified on a local model — **no API key**. Coverage spans Tier 1 (naming), Tier 2 vision (color-alone, focus-visible, text-in-images), Tier 3 dynamic (focus, live regions, keyboard), the Tier 4 axe-core floor, and Tier 5 advisory (never a certified `PASS`). The agent surfaces (MCP, triage) and remediation (fix) are real. See [`docs/ROADMAP.md`](docs/ROADMAP.md) for current state and [`docs/PLAN.md`](docs/PLAN.md) for the architecture.
 
 ## How it works
 
@@ -67,7 +69,7 @@ Register it like any stdio MCP server — local model, no API key:
 } } }
 ```
 
-Then *investigate* a page (→ a graded report with fixes), *explain* a finding from evidence, and *suggest_fix* (→ targeted `FixPlan`s the agent applies to source). Full reference: [docs/mcp-tools.md](docs/mcp-tools.md).
+Then *investigate* a page (→ a graded report with fixes), *explain* a finding from evidence, *suggest_fix* (→ targeted `FixPlan`s), and *apply_fix* (→ patches the fixes into source). Full reference: [docs/mcp-tools.md](docs/mcp-tools.md).
 
 ## Development
 
