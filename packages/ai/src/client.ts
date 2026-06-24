@@ -10,6 +10,7 @@ import {
 import {
   type Assessment,
   ClaudeJudgmentModel,
+  type ImageInput,
   type JudgmentModel,
   StubJudgmentModel,
 } from "./model.js";
@@ -25,6 +26,30 @@ import {
  * Integrity guard: an advisory judgment may never assert a confident PASS.
  * If the model returns PASS on an advisory-tier concern, downgrade to UNKNOWN.
  */
+/** Pull base64 screenshots out of vision evidence to send as images to the model. */
+function collectImages(evidence: EvidenceRecord[]): ImageInput[] {
+  const images: ImageInput[] = [];
+  for (const record of evidence) {
+    const after = record.after as { screenshot?: unknown; mediaType?: unknown } | null;
+    if (after && typeof after.screenshot === "string") {
+      images.push({
+        data: after.screenshot,
+        mediaType: typeof after.mediaType === "string" ? after.mediaType : "image/png",
+      });
+    }
+  }
+  return images;
+}
+
+/** Drop a screenshot's base64 from the text prompt — it travels as an image, not text. */
+function stripImage(record: EvidenceRecord): EvidenceRecord {
+  if (record.after && typeof record.after === "object" && "screenshot" in record.after) {
+    const { screenshot: _screenshot, ...rest } = record.after as Record<string, unknown>;
+    return { ...record, after: rest };
+  }
+  return record;
+}
+
 export function enforceIntegrity(judgment: AIJudgment): AIJudgment {
   if (judgment.reliability === "advisory" && judgment.verdict === "PASS") {
     return { ...judgment, verdict: "UNKNOWN", reason: `${judgment.reason} (advisory: cannot certify PASS)` };
@@ -76,9 +101,11 @@ export class ConcernAIClient implements AIClient {
         evidenceRefs: [],
       };
     }
+    const images = collectImages(evidence);
     const assessment = await this.#model.assess(
       buildSystemPrompt(concern),
-      buildUserPrompt(evidence, intent),
+      buildUserPrompt(evidence.map(stripImage), intent),
+      images.length > 0 ? images : undefined,
     );
     return toJudgment(assessment, evidence, this.#reliability);
   }

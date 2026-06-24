@@ -11,6 +11,7 @@ export {
   ClaudeJudgmentModel,
   type ClaudeOptions,
   fixedModel,
+  type ImageInput,
   type JudgmentModel,
   StubJudgmentModel,
   zAssessment,

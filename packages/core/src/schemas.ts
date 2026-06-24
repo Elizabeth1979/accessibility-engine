@@ -106,6 +106,17 @@ export const zKeyboardPayload = z.object({
 });
 export type KeyboardPayload = z.infer<typeof zKeyboardPayload>;
 
+/** Tier 2 vision evidence: a rendered screenshot judged for what static rules can't see. */
+export const zVisionPayload = z.object({
+  kind: z.enum(["color-alone", "focus-visible", "text-in-images"]),
+  selector: z.string().optional(),
+  context: z.string(),
+  /** Base64-encoded PNG of the element/region, sent to a vision model. */
+  screenshot: z.string(),
+  mediaType: z.string().optional(),
+});
+export type VisionPayload = z.infer<typeof zVisionPayload>;
+
 export const zInteractionType = z.enum([
   "tab",
   "shift-tab",

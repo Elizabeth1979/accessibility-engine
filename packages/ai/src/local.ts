@@ -1,4 +1,4 @@
-import { type Assessment, type JudgmentModel, zAssessment } from "./model.js";
+import { type Assessment, type ImageInput, type JudgmentModel, zAssessment } from "./model.js";
 
 export interface LocalOptions {
   /** OpenAI-compatible base URL. Defaults to Ollama (http://localhost:11434/v1). */
@@ -51,14 +51,24 @@ export class LocalJudgmentModel implements JudgmentModel {
     this.name = `local:${this.#model}`;
   }
 
-  async assess(system: string, user: string): Promise<Assessment> {
-    let content: string;
+  async assess(system: string, user: string, images?: ImageInput[]): Promise<Assessment> {
+    const userContent =
+      images && images.length > 0
+        ? [
+            { type: "text", text: user },
+            ...images.map((image) => ({
+              type: "image_url",
+              image_url: { url: `data:${image.mediaType};base64,${image.data}` },
+            })),
+          ]
+        : user;
+    let raw: string;
     try {
-      content = await this.#chat(system + JSON_DIRECTIVE, user, true);
+      raw = await this.#chat(system + JSON_DIRECTIVE, userContent, true);
     } catch (err) {
       return unknown(`Local model unreachable or errored (${this.name}): ${messageOf(err)}`);
     }
-    const assessment = normalize(extractJson(content));
+    const assessment = normalize(extractJson(raw));
     if (!assessment) return unknown(`Local model returned no usable verdict (${this.name}).`);
     return zAssessment.parse(assessment);
   }
@@ -72,7 +82,7 @@ export class LocalJudgmentModel implements JudgmentModel {
     }
   }
 
-  async #chat(system: string, user: string, json: boolean): Promise<string> {
+  async #chat(system: string, userContent: unknown, json: boolean): Promise<string> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.#timeoutMs);
     try {
@@ -89,7 +99,7 @@ export class LocalJudgmentModel implements JudgmentModel {
           ...(json ? { response_format: { type: "json_object" } } : {}),
           messages: [
             { role: "system", content: system },
-            { role: "user", content: user },
+            { role: "user", content: userContent },
           ],
         }),
         signal: controller.signal,

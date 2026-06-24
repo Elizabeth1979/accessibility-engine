@@ -30,10 +30,18 @@ const ASSESSMENT_JSON_SCHEMA = {
  * The model seam. The AI client depends on this interface, not on the SDK
  * directly — so tests inject a fake and CI never needs an API key.
  */
+/** An image passed to a vision-capable model alongside the text prompt. */
+export interface ImageInput {
+  /** Base64-encoded image bytes (no data: prefix). */
+  data: string;
+  /** e.g. "image/png". */
+  mediaType: string;
+}
+
 export interface JudgmentModel {
   readonly name: string;
-  /** Judge a concern → a structured assessment. */
-  assess(system: string, user: string): Promise<Assessment>;
+  /** Judge a concern → a structured assessment. Vision concerns pass `images`. */
+  assess(system: string, user: string, images?: ImageInput[]): Promise<Assessment>;
   /** Answer a grounded question → free-form text (the conversation surface). */
   answer(system: string, user: string): Promise<string>;
 }
@@ -58,13 +66,27 @@ export class ClaudeJudgmentModel implements JudgmentModel {
     this.name = `claude:${this.#modelId}`;
   }
 
-  async assess(system: string, user: string): Promise<Assessment> {
+  async assess(system: string, user: string, images?: ImageInput[]): Promise<Assessment> {
+    const content: Anthropic.MessageParam["content"] =
+      images && images.length > 0
+        ? [
+            { type: "text" as const, text: user },
+            ...images.map((image) => ({
+              type: "image" as const,
+              source: {
+                type: "base64" as const,
+                media_type: image.mediaType as "image/png",
+                data: image.data,
+              },
+            })),
+          ]
+        : user;
     const response = await this.#client.messages.create({
       model: this.#modelId,
       max_tokens: 16000,
       thinking: { type: "adaptive" },
       system,
-      messages: [{ role: "user", content: user }],
+      messages: [{ role: "user", content }],
       output_config: { format: { type: "json_schema", schema: ASSESSMENT_JSON_SCHEMA } },
     });
 
