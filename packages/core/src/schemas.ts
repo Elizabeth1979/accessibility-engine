@@ -140,6 +140,19 @@ export const zGroundingPayload = z.object({
 });
 export type GroundingPayload = z.infer<typeof zGroundingPayload>;
 
+/**
+ * Screen-reader evidence: the ordered phrases a virtual screen reader speaks traversing
+ * the page once — the literal "what a screen-reader user hears". Captured by an opt-in
+ * observer (a full traversal is too heavy for every capture); like grounding, it is not
+ * routed to a judge but grounds `explain()` and reading-order/announcement reasoning.
+ */
+export const zScreenReaderPayload = z.object({
+  kind: z.literal("screen-reader"),
+  transcript: z.array(z.string()),
+  itemCount: z.number().int().nonnegative(),
+});
+export type ScreenReaderPayload = z.infer<typeof zScreenReaderPayload>;
+
 export const zInteractionType = z.enum([
   "tab",
   "shift-tab",

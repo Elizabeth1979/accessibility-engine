@@ -96,10 +96,12 @@ export const screenshotObserver = stubObserver("screenshot");
 export const imageObserver = stubObserver("image");
 export const stylesObserver = stubObserver("styles");
 export const networkObserver = stubObserver("network");
-/** Deterministic, CI-safe (default). A real-SR observer is opt-in/gated later (see roadmap). */
-export const virtualScreenReaderObserver = stubObserver("virtual-screen-reader");
 
-/** Default grounding observers fed to the runner: real DOM + a11y-tree; deferred capture as stubs. */
+/**
+ * Default grounding observers fed to the runner: real DOM + a11y-tree; deferred capture as stubs.
+ * The real screen-reader observer (createScreenReaderObserver) is deliberately NOT here — a full
+ * SR traversal on every capture is too heavy, so it is opt-in (see ./screen-reader.ts).
+ */
 export const groundingObservers: Observer[] = [
   domObserver,
   a11yTreeObserver,
@@ -107,7 +109,7 @@ export const groundingObservers: Observer[] = [
   imageObserver,
   stylesObserver,
   networkObserver,
-  virtualScreenReaderObserver,
 ];
 
 export { createNamingObserver } from "./naming.js";
+export { createScreenReaderObserver, screenReaderTranscript } from "./screen-reader.js";

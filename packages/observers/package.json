@@ -10,7 +10,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b",
     "pretest": "tsc -b",
@@ -18,7 +20,11 @@
   },
   "dependencies": {
     "@aee/core": "workspace:*",
+    "@guidepup/virtual-screen-reader": "^0.25.0",
     "axe-core": "^4.11.2",
-    "@guidepup/virtual-screen-reader": "^0.25.0"
+    "jsdom": "^29.1.1"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^28.0.3"
   }
 }
