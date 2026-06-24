@@ -23,7 +23,7 @@ import {
   liveRegionJudge,
   textInImagesJudge,
 } from "@aee/judges";
-import { capturePage } from "@aee/playwright";
+import { capturePage, defaultArtifactStore } from "@aee/playwright";
 import { buildReport } from "@aee/reporter";
 
 /**
@@ -58,6 +58,24 @@ function elementTarget(payload: Record<string, unknown>, kind: string): ElementR
 }
 
 /**
+ * Inline screenshot bytes from the artifact store into vision evidence, so the AI — which
+ * sees evidence only, never the store — receives a complete record. The persisted evidence
+ * stays ref-only; this resolved copy is transient, built only to hand to the model. A store
+ * miss leaves the screenshot absent, so the AI degrades to UNKNOWN rather than guessing PASS.
+ */
+export function resolveArtifacts(evidence: EvidenceRecord[]): EvidenceRecord[] {
+  return evidence.map((record) => {
+    const after = record.after as Record<string, unknown> | null;
+    if (!after || typeof after !== "object") return record;
+    const artifact = after.artifact as { id?: string } | undefined;
+    if (!artifact?.id || typeof after.screenshot === "string") return record;
+    const screenshot = defaultArtifactStore.base64(artifact.id);
+    if (!screenshot) return record;
+    return { ...record, after: { ...after, screenshot } };
+  });
+}
+
+/**
  * Judge captured evidence per element: each record is routed by its kind to the
  * matching concern and judged on its own, yielding one verdict per element.
  * Records whose kind has no route are skipped (no spurious verdicts).
@@ -68,7 +86,7 @@ export async function judgeEvidence(
   intent?: Intent,
 ): Promise<Verdict[]> {
   const verdicts: Verdict[] = [];
-  for (const record of evidence) {
+  for (const record of resolveArtifacts(evidence)) {
     const payload =
       record.after && typeof record.after === "object"
         ? (record.after as Record<string, unknown>)

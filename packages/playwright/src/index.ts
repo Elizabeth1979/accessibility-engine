@@ -3,6 +3,7 @@ import { test as base, expect } from "@playwright/test";
 import { collectEvidence, defaultCaptureObservers } from "./capture.js";
 
 export { PlaywrightDriver, artifactRef } from "./driver.js";
+export { ArtifactStore, defaultArtifactStore, type StoredArtifact } from "./artifacts.js";
 export { createClock } from "./clock.js";
 export {
   captureAxe,

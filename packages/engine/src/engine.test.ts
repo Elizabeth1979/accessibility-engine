@@ -9,8 +9,9 @@ import {
   captureLiveRegion,
   captureVision,
   chromiumAvailable,
+  defaultArtifactStore,
 } from "@aee/playwright";
-import { investigate, judgeEvidence, judgeRun } from "./index.js";
+import { investigate, judgeEvidence, judgeRun, resolveArtifacts } from "./index.js";
 
 // Deterministic: routing + per-element judging, no browser and no real model.
 test("judgeEvidence routes each evidence kind to its concern and skips unroutable records", async () => {
@@ -197,7 +198,7 @@ test("captureKeyboard: a native button is keyboard-operable (local model)", { sk
 
 const COLOR_ONLY = `<main><span id="status" style="color:#d00">Payment failed</span></main>`;
 
-test("captureVision captures an element screenshot as base64", {
+test("captureVision stores the screenshot as a content-addressed artifact, not inline base64", {
   skip: chromiumAvailable() ? false : "no Chromium browser available",
 }, async () => {
   const evidence = await captureVision(COLOR_ONLY, {
@@ -206,9 +207,52 @@ test("captureVision captures an element screenshot as base64", {
     context: "the only error cue is the red text colour",
   });
   assert.equal(evidence.length, 1);
-  const after = evidence[0]?.after as { kind: string; screenshot: string };
+  const record = evidence[0];
+  assert.ok(record);
+  const after = record.after as { kind: string; artifact: { id: string; bytes?: number }; screenshot?: string };
   assert.equal(after.kind, "color-alone");
-  assert.ok(after.screenshot.length > 100); // a real base64 PNG
+  assert.match(after.artifact.id, /^sha256:[0-9a-f]{64}$/);
+  assert.ok((after.artifact.bytes ?? 0) > 100); // a real PNG, held by reference
+  assert.equal(after.screenshot, undefined); // bytes live in the store, not the evidence
+  assert.equal(record.raw?.id, after.artifact.id); // EvidenceRecord.raw carries the ref
+  const stored = defaultArtifactStore.base64(after.artifact.id);
+  assert.ok(stored && stored.length > 100); // resolvable back to the real bytes
+});
+
+// Resolution is deterministic (no browser): the engine inlines stored bytes for the AI.
+test("resolveArtifacts inlines stored bytes for the AI, leaving persisted evidence ref-only", () => {
+  const ref = defaultArtifactStore.put("AAECAwQFBgcICQ==", "image/png");
+  const record: EvidenceRecord = {
+    schemaVersion: SCHEMA_VERSION,
+    interactionId: "v1",
+    at: 0,
+    observer: "vision",
+    before: null,
+    after: { kind: "color-alone", context: "", artifact: ref },
+    changes: [],
+    confidence: "high",
+    source: "observed",
+    raw: ref,
+  };
+  const [resolved] = resolveArtifacts([record]);
+  assert.equal((resolved?.after as { screenshot?: string }).screenshot, defaultArtifactStore.base64(ref.id));
+  assert.equal((record.after as { screenshot?: string }).screenshot, undefined); // original untouched
+});
+
+test("resolveArtifacts degrades safely when the artifact is missing (no fabricated image)", () => {
+  const record: EvidenceRecord = {
+    schemaVersion: SCHEMA_VERSION,
+    interactionId: "v2",
+    at: 0,
+    observer: "vision",
+    before: null,
+    after: { kind: "color-alone", context: "", artifact: { id: "sha256:missing" } },
+    changes: [],
+    confidence: "high",
+    source: "observed",
+  };
+  const [resolved] = resolveArtifacts([record]);
+  assert.equal((resolved?.after as { screenshot?: string }).screenshot, undefined);
 });
 
 // Vision judging runs on a vision-capable local model. gemma4:e4b is multimodal, so the

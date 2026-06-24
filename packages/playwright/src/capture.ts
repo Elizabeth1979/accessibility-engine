@@ -14,6 +14,7 @@ import {
 import { createNamingObserver, groundingObservers } from "@aee/observers";
 import axe from "axe-core";
 import { type Page, chromium } from "@playwright/test";
+import { defaultArtifactStore } from "./artifacts.js";
 import { createClock } from "./clock.js";
 import { PlaywrightDriver } from "./driver.js";
 
@@ -266,12 +267,14 @@ export async function captureVision(
     const clock = createClock();
     if (opts.focus) await page.focus(opts.selector).catch(() => {});
     const buffer = await page.locator(opts.selector).screenshot();
+    // Heavy bytes go to the content-addressed store; the evidence carries only a light ref.
+    const artifact = defaultArtifactStore.put(buffer, "image/png");
     interactionCounter += 1;
     const after: VisionPayload = {
       kind: opts.kind,
       selector: opts.selector,
       context: opts.context ?? "",
-      screenshot: buffer.toString("base64"),
+      artifact,
       mediaType: "image/png",
     };
     return [
@@ -285,6 +288,7 @@ export async function captureVision(
         changes: [],
         confidence: "high",
         source: "observed",
+        raw: artifact,
       },
     ];
   } finally {

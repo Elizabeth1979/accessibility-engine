@@ -106,13 +106,20 @@ export const zKeyboardPayload = z.object({
 });
 export type KeyboardPayload = z.infer<typeof zKeyboardPayload>;
 
-/** Tier 2 vision evidence: a rendered screenshot judged for what static rules can't see. */
+/**
+ * Tier 2 vision evidence: a rendered screenshot judged for what static rules can't see.
+ * The heavy bytes live in the content-addressed artifact store, referenced by `artifact`;
+ * the persisted evidence stays light. `screenshot` (base64) is absent at rest and inlined
+ * by the engine from the store just for the AI call, so the AI still sees evidence only.
+ */
 export const zVisionPayload = z.object({
   kind: z.enum(["color-alone", "focus-visible", "text-in-images"]),
   selector: z.string().optional(),
   context: z.string(),
-  /** Base64-encoded PNG of the element/region, sent to a vision model. */
-  screenshot: z.string(),
+  /** Content-addressed handle to the screenshot bytes in the artifact store. */
+  artifact: zArtifactRef.optional(),
+  /** Base64 PNG, inlined by the engine from the store at judge time (or set directly in tests). */
+  screenshot: z.string().optional(),
   mediaType: z.string().optional(),
 });
 export type VisionPayload = z.infer<typeof zVisionPayload>;
