@@ -1,9 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Clock, Driver } from "@aee/core";
-import { createNamingObserver, groundingObservers } from "./index.js";
+import {
+  a11yTreeObserver,
+  createNamingObserver,
+  domObserver,
+  groundingObservers,
+} from "./index.js";
 
-test("stub observers collect no evidence (degrade to UNKNOWN, never PASS)", async () => {
+test("grounding observers degrade to no evidence without a driver (never a guessed PASS)", async () => {
+  // collect() called without init() means no page seam — real and stub observers alike
+  // must yield nothing rather than guess, which downstream becomes UNKNOWN, never PASS.
   assert.ok(groundingObservers.length > 0);
   for (const obs of groundingObservers) {
     const records = await obs.collect(
@@ -70,6 +77,40 @@ test("the naming observer maps captured elements to grounded evidence records", 
   const btn = records[1];
   assert.ok(btn);
   assert.equal((btn.after as { kind: string }).kind, "icon-button");
+});
+
+test("the dom and a11y-tree observers capture page-level grounding via the driver", async () => {
+  const driver: Driver = {
+    ...fakeDriver([]),
+    async snapshotDom() {
+      return "<main><h1>Checkout</h1></main>";
+    },
+    async snapshotA11yTree() {
+      return '- heading "Checkout" [level=1]';
+    },
+  };
+  const clock: Clock = { now: () => 7 };
+
+  await domObserver.init({ driver, clock });
+  const dom = await domObserver.collect(
+    { id: "g1", type: "load", at: 0 },
+    { interactionId: "g1", opensAt: 0 },
+  );
+  assert.equal(dom.length, 1);
+  assert.equal(dom[0]?.observer, "dom");
+  assert.deepEqual(dom[0]?.after, {
+    kind: "dom",
+    snapshot: "<main><h1>Checkout</h1></main>",
+    length: "<main><h1>Checkout</h1></main>".length,
+  });
+
+  await a11yTreeObserver.init({ driver, clock });
+  const tree = await a11yTreeObserver.collect(
+    { id: "g1", type: "load", at: 0 },
+    { interactionId: "g1", opensAt: 0 },
+  );
+  assert.equal((tree[0]?.after as { kind: string }).kind, "a11y-tree");
+  assert.equal((tree[0]?.after as { snapshot: string }).snapshot, '- heading "Checkout" [level=1]');
 });
 
 test("the naming observer degrades to no evidence when the page scan fails", async () => {

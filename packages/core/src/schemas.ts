@@ -127,6 +127,19 @@ export const zAxePayload = z.object({
 });
 export type AxePayload = z.infer<typeof zAxePayload>;
 
+/**
+ * Page-level grounding evidence: a whole-page snapshot not tied to one element or concern.
+ * It is NOT routed to a judge — it grounds the conversational `explain()` surface and makes
+ * a run reproducible. `dom` is the rendered HTML; `a11y-tree` is the accessibility tree
+ * (what assistive tech actually exposes). `length` is a cheap size signal for the snapshot.
+ */
+export const zGroundingPayload = z.object({
+  kind: z.enum(["dom", "a11y-tree"]),
+  snapshot: z.string(),
+  length: z.number().int().nonnegative(),
+});
+export type GroundingPayload = z.infer<typeof zGroundingPayload>;
+
 export const zInteractionType = z.enum([
   "tab",
   "shift-tab",

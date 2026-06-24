@@ -65,5 +65,15 @@ nodeTest(
     const field = evidence.find((e) => (e.after as { kind?: string }).kind === "form-field");
     assert.ok(field, "captured the form field");
     assert.equal((field.after as { accessibleName: string | null }).accessibleName, "Email address");
+
+    // Grounding observers also snapshot the page itself: the rendered DOM and the
+    // accessibility tree travel with the run (for explain() + reproducibility), though
+    // they are not routed to a judge.
+    const dom = evidence.find((e) => (e.after as { kind?: string }).kind === "dom");
+    assert.ok(dom, "captured the page DOM as grounding");
+    assert.match((dom.after as { snapshot: string }).snapshot, /winter coat/i);
+    const tree = evidence.find((e) => (e.after as { kind?: string }).kind === "a11y-tree");
+    assert.ok(tree, "captured the accessibility tree as grounding");
+    assert.ok((tree.after as { length: number }).length > 0);
   },
 );
