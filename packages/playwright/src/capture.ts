@@ -4,6 +4,7 @@ import {
   type FocusPayload,
   type Intent,
   type Interaction,
+  type KeyboardPayload,
   type LiveRegionPayload,
   type Observer,
   SCHEMA_VERSION,
@@ -89,7 +90,7 @@ async function performInteraction(page: Page, driver: PlaywrightDriver, trigger:
 }
 
 function interactionRecord(
-  after: FocusPayload | LiveRegionPayload,
+  after: FocusPayload | LiveRegionPayload | KeyboardPayload,
   focusBefore: string | null,
   clock: { now(): number },
   name: string | undefined,
@@ -162,6 +163,53 @@ export async function captureLiveRegion(
       announcement: outcome.announcement,
     };
     return [interactionRecord(after, outcome.focusBefore, clock, opts.name)];
+  } finally {
+    await browser.close();
+  }
+}
+
+/**
+ * Capture whether a control is keyboard-operable, not just mouse-operable. Activates the
+ * trigger by keyboard (Enter) and by mouse on fresh DOM states, recording whether it is
+ * focusable and whether each path actually changed the page. Emits a "keyboard" record
+ * the engine routes to the keyboard-operable concern (Tier 3).
+ */
+export async function captureKeyboard(
+  html: string,
+  opts: { trigger: string; name?: string; intent?: Intent },
+): Promise<EvidenceRecord[]> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    const driver = new PlaywrightDriver(page);
+    const clock = createClock();
+
+    // Keyboard path on a fresh DOM: can it be focused, and does Enter activate it?
+    await page.setContent(html, { waitUntil: "load" });
+    await page.focus(opts.trigger).catch(() => {});
+    const focusable = await driver.eval<boolean>(
+      `(() => { const el = document.querySelector(${JSON.stringify(opts.trigger)}); return !!el && document.activeElement === el; })()`,
+    );
+    const domBeforeKey = String(await driver.snapshotDom());
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(50);
+    const activatesOnKey = String(await driver.snapshotDom()) !== domBeforeKey;
+
+    // Mouse path on a fresh DOM (reset so the two are independent): does a click activate it?
+    await page.setContent(html, { waitUntil: "load" });
+    const domBeforeClick = String(await driver.snapshotDom());
+    await page.click(opts.trigger);
+    await page.waitForTimeout(50);
+    const activatesOnClick = String(await driver.snapshotDom()) !== domBeforeClick;
+
+    const after: KeyboardPayload = {
+      kind: "keyboard",
+      trigger: opts.trigger,
+      focusable,
+      activatesOnKey,
+      activatesOnClick,
+    };
+    return [interactionRecord(after, null, clock, opts.name)];
   } finally {
     await browser.close();
   }

@@ -96,6 +96,16 @@ export const zLiveRegionPayload = z.object({
 });
 export type LiveRegionPayload = z.infer<typeof zLiveRegionPayload>;
 
+/** Dynamic (Tier 3) evidence for keyboard operability: can a control be used without a mouse? */
+export const zKeyboardPayload = z.object({
+  kind: z.literal("keyboard"),
+  trigger: z.string(),
+  focusable: z.boolean(),
+  activatesOnKey: z.boolean(),
+  activatesOnClick: z.boolean(),
+});
+export type KeyboardPayload = z.infer<typeof zKeyboardPayload>;
+
 export const zInteractionType = z.enum([
   "tab",
   "shift-tab",

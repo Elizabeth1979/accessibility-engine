@@ -14,6 +14,7 @@ import {
   focusManagementJudge,
   formLabelJudge,
   headingStructureJudge,
+  keyboardOperableJudge,
   linkTextJudge,
   liveRegionJudge,
 } from "@aee/judges";
@@ -33,6 +34,7 @@ const ROUTES: Record<string, { concern: string; judge: Judge }> = {
   "form-field": { concern: "form-label", judge: formLabelJudge },
   "focus-change": { concern: "focus-management", judge: focusManagementJudge },
   "live-region": { concern: "live-region", judge: liveRegionJudge },
+  keyboard: { concern: "keyboard-operable", judge: keyboardOperableJudge },
 };
 
 /** Best-effort element identity from a payload (naming uses `selector`, dynamic uses `trigger`). */

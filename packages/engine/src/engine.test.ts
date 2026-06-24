@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { NAMING_FIXTURES, createAIClient, fixedModel } from "@aee/ai";
 import { type EvidenceRecord, SCHEMA_VERSION } from "@aee/core";
-import { captureInteraction, captureLiveRegion, chromiumAvailable } from "@aee/playwright";
+import {
+  captureInteraction,
+  captureKeyboard,
+  captureLiveRegion,
+  chromiumAvailable,
+} from "@aee/playwright";
 import { investigate, judgeEvidence } from "./index.js";
 
 // Deterministic: routing + per-element judging, no browser and no real model.
@@ -162,4 +167,28 @@ test("captureLiveRegion: an announced content update is not flagged (local model
   assert.match(after.announcement ?? "", /added to cart/i); // the live region announced it
   const verdicts = await judgeEvidence(evidence, createAIClient({ provider: "local" }));
   assert.notEqual(verdicts[0]?.status, "FAIL"); // an announced change is not a failure
+});
+
+const MOUSE_ONLY = `<main><div id="widget" onclick="document.getElementById('out').textContent='clicked'">Toggle</div><span id="out"></span></main>`;
+const KEYBOARD_OK = `<main><button id="widget" onclick="document.getElementById('out').textContent='clicked'">Toggle</button><span id="out"></span></main>`;
+
+test("captureKeyboard: a mouse-only widget is flagged (local model)", { skip }, async () => {
+  const evidence = await captureKeyboard(MOUSE_ONLY, { trigger: "#widget" });
+  const after = evidence[0]?.after as {
+    focusable: boolean;
+    activatesOnKey: boolean;
+    activatesOnClick: boolean;
+  };
+  assert.equal(after.activatesOnClick, true); // it does something on click
+  assert.equal(after.activatesOnKey, false); // but not via the keyboard
+  const verdicts = await judgeEvidence(evidence, createAIClient({ provider: "local" }));
+  assert.notEqual(verdicts[0]?.status, "PASS"); // mouse-only is not a PASS
+});
+
+test("captureKeyboard: a native button is keyboard-operable (local model)", { skip }, async () => {
+  const evidence = await captureKeyboard(KEYBOARD_OK, { trigger: "#widget" });
+  const after = evidence[0]?.after as { activatesOnKey: boolean };
+  assert.equal(after.activatesOnKey, true); // Enter activates the button
+  const verdicts = await judgeEvidence(evidence, createAIClient({ provider: "local" }));
+  assert.notEqual(verdicts[0]?.status, "FAIL"); // keyboard-operable is not a failure
 });
