@@ -79,5 +79,6 @@ Tier 1 proved the thesis: AI elevates each check from "is the attribute present?
 
 ## Status — resume here
 
-- ✅ Tier 1; A (engine + `investigate()`); B (MCP server — runnable + documented); C (reporter); D (targeted FixPlans + PR scaffold); ✅ E — minimal local triage UI shell over `ask()`. **The roadmap is implemented end to end except the vision tiers.**
-- ▶ **NEXT: Phase F (Tiers 2–3) — BLOCKED on a decision.** It needs a vision-capable model (local `gemma4:e4b` is text-only): Claude (an API key), a local vision model (e.g. llava / qwen-VL in Ollama), or defer. Until that's chosen, the core product is complete.
+**✅ The entire A–F roadmap is implemented.** A (engine + `investigate()`), B (runnable MCP server + docs), C (reporter), D (targeted FixPlans + `gh` PR scaffold), E (local triage UI shell), F — Tier 2 (color-alone, focus-visible) and Tier 3 (focus management, live regions, keyboard operability). All verified on the local model, except the **Tier 2 vision judging**, which is wired and **gated on a vision model**: it runs the moment you set `AEE_LLM_PROVIDER=local` + `AEE_VISION_MODEL=<a local vision model>` (e.g. `ollama pull llava`), or point it at Claude. The image plumbing and screenshot capture are proven deterministically; `gemma4:e4b` is text-only so the live vision check skips by default.
+
+Possible follow-ons (not required): Tier 4 (wrap axe-core for exact contrast / ARIA validity — the deterministic floor), Tier 5 (advisory-only caption/plain-language checks), a real evidence/artifact store (screenshots by reference rather than inline base64), URL navigation in `investigate`, and richer source-mapping for `applyFix`.
