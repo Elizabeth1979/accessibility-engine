@@ -85,6 +85,17 @@ export const zFocusPayload = z.object({
 });
 export type FocusPayload = z.infer<typeof zFocusPayload>;
 
+/** Dynamic (Tier 3) evidence for live regions: did an interaction's content change get announced? */
+export const zLiveRegionPayload = z.object({
+  kind: z.literal("live-region"),
+  trigger: z.string(),
+  focusBefore: z.string().nullable(),
+  focusAfter: z.string().nullable(),
+  domChanged: z.boolean(),
+  announcement: z.string().optional(),
+});
+export type LiveRegionPayload = z.infer<typeof zLiveRegionPayload>;
+
 export const zInteractionType = z.enum([
   "tab",
   "shift-tab",

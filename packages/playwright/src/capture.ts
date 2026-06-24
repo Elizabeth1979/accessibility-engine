@@ -4,6 +4,7 @@ import {
   type FocusPayload,
   type Intent,
   type Interaction,
+  type LiveRegionPayload,
   type Observer,
   SCHEMA_VERSION,
 } from "@aee/core";
@@ -73,10 +74,44 @@ export async function captureHtml(
   }
 }
 
+/** Focus the trigger, activate it, and observe the focus / DOM / announcement outcome. */
+async function performInteraction(page: Page, driver: PlaywrightDriver, trigger: string) {
+  await page.focus(trigger).catch(() => {});
+  const focusBefore = await driver.focusedElement();
+  const domBefore = String(await driver.snapshotDom());
+  await page.click(trigger);
+  await page.waitForTimeout(80); // let focus / DOM settle after the activation
+  const focusAfter = await driver.focusedElement();
+  const domAfter = String(await driver.snapshotDom());
+  const announcement =
+    (await driver.eval<string>(`(${readAnnouncement.toString()})()`)) || undefined;
+  return { focusBefore, focusAfter, domChanged: domBefore !== domAfter, announcement };
+}
+
+function interactionRecord(
+  after: FocusPayload | LiveRegionPayload,
+  focusBefore: string | null,
+  clock: { now(): number },
+  name: string | undefined,
+): EvidenceRecord {
+  interactionCounter += 1;
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    interactionId: `${name ?? "interaction"}-${interactionCounter}`,
+    at: clock.now(),
+    observer: "interaction",
+    before: { focused: focusBefore },
+    after,
+    changes: [],
+    confidence: "high",
+    source: "observed",
+  };
+}
+
 /**
  * Capture a single interaction's focus behaviour: focus the trigger, activate it, and
- * record where focus lands plus any live-region announcement. The result is a
- * "focus-change" record the engine routes to the focus-management concern (Tier 3).
+ * record where focus lands. The result is a "focus-change" record the engine routes to
+ * the focus-management concern (Tier 3).
  */
 export async function captureInteraction(
   html: string,
@@ -88,36 +123,45 @@ export async function captureInteraction(
     await page.setContent(html, { waitUntil: "load" });
     const driver = new PlaywrightDriver(page);
     const clock = createClock();
-
-    await page.focus(opts.trigger).catch(() => {});
-    const focusBefore = await driver.focusedElement();
-    await page.click(opts.trigger);
-    await page.waitForTimeout(80); // let focus / DOM settle after the activation
-    const focusAfter = await driver.focusedElement();
-    const announcement =
-      (await driver.eval<string>(`(${readAnnouncement.toString()})()`)) || undefined;
-
-    interactionCounter += 1;
+    const outcome = await performInteraction(page, driver, opts.trigger);
     const after: FocusPayload = {
       kind: "focus-change",
       trigger: opts.trigger,
-      focusBefore,
-      focusAfter,
-      announcement,
+      focusBefore: outcome.focusBefore,
+      focusAfter: outcome.focusAfter,
+      announcement: outcome.announcement,
     };
-    return [
-      {
-        schemaVersion: SCHEMA_VERSION,
-        interactionId: `${opts.name ?? "interaction"}-${interactionCounter}`,
-        at: clock.now(),
-        observer: "interaction",
-        before: { focused: focusBefore },
-        after,
-        changes: [],
-        confidence: "high",
-        source: "observed",
-      },
-    ];
+    return [interactionRecord(after, outcome.focusBefore, clock, opts.name)];
+  } finally {
+    await browser.close();
+  }
+}
+
+/**
+ * Capture whether an interaction's content change was announced. Activates the trigger
+ * and records the DOM change plus any live-region announcement, as a "live-region"
+ * record the engine routes to the live-region concern (Tier 3).
+ */
+export async function captureLiveRegion(
+  html: string,
+  opts: { trigger: string; name?: string; intent?: Intent },
+): Promise<EvidenceRecord[]> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "load" });
+    const driver = new PlaywrightDriver(page);
+    const clock = createClock();
+    const outcome = await performInteraction(page, driver, opts.trigger);
+    const after: LiveRegionPayload = {
+      kind: "live-region",
+      trigger: opts.trigger,
+      focusBefore: outcome.focusBefore,
+      focusAfter: outcome.focusAfter,
+      domChanged: outcome.domChanged,
+      announcement: outcome.announcement,
+    };
+    return [interactionRecord(after, outcome.focusBefore, clock, opts.name)];
   } finally {
     await browser.close();
   }

@@ -7,6 +7,7 @@ export { createClock } from "./clock.js";
 export {
   captureHtml,
   captureInteraction,
+  captureLiveRegion,
   chromiumAvailable,
   collectEvidence,
   defaultCaptureObservers,

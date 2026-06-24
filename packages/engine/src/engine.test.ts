@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { NAMING_FIXTURES, createAIClient, fixedModel } from "@aee/ai";
 import { type EvidenceRecord, SCHEMA_VERSION } from "@aee/core";
-import { captureInteraction, chromiumAvailable } from "@aee/playwright";
+import { captureInteraction, captureLiveRegion, chromiumAvailable } from "@aee/playwright";
 import { investigate, judgeEvidence } from "./index.js";
 
 // Deterministic: routing + per-element judging, no browser and no real model.
@@ -132,4 +132,34 @@ test("captureInteraction: focus that does not move into the opened dialog is cau
   assert.equal(verdicts.length, 1);
   assert.notEqual(verdicts[0]?.status, "PASS");
   assert.ok((verdicts[0]?.suggestedFix ?? "").length > 0);
+});
+
+const SILENT_UPDATE = `
+  <main>
+    <button id="add" onclick="document.getElementById('count').textContent='1 item'">Add to cart</button>
+    <span id="count">0 items</span>
+  </main>`;
+
+const ANNOUNCED_UPDATE = `
+  <main>
+    <button id="add" onclick="document.getElementById('status').textContent='Added to cart'">Add to cart</button>
+    <span id="status" aria-live="polite"></span>
+  </main>`;
+
+test("captureLiveRegion: a silent content update is flagged (local model)", { skip }, async () => {
+  const evidence = await captureLiveRegion(SILENT_UPDATE, { trigger: "#add" });
+  const after = evidence[0]?.after as { kind: string; domChanged: boolean; announcement?: string };
+  assert.equal(after.kind, "live-region");
+  assert.equal(after.domChanged, true); // the content changed
+  assert.ok(!after.announcement); // but nothing was announced
+  const verdicts = await judgeEvidence(evidence, createAIClient({ provider: "local" }));
+  assert.notEqual(verdicts[0]?.status, "PASS"); // a silent change is not a PASS
+});
+
+test("captureLiveRegion: an announced content update is not flagged (local model)", { skip }, async () => {
+  const evidence = await captureLiveRegion(ANNOUNCED_UPDATE, { trigger: "#add" });
+  const after = evidence[0]?.after as { announcement?: string };
+  assert.match(after.announcement ?? "", /added to cart/i); // the live region announced it
+  const verdicts = await judgeEvidence(evidence, createAIClient({ provider: "local" }));
+  assert.notEqual(verdicts[0]?.status, "FAIL"); // an announced change is not a failure
 });

@@ -18,6 +18,8 @@ const CONCERN_GUIDANCE: Record<string, string> = {
     "For form fields specifically: every input needs a programmatically associated label. A placeholder is NOT a label (it disappears on input and is unreliable for assistive tech), so a field labeled only by a placeholder — or with no label at all — is a FAIL.",
   "focus-management":
     "For focus management specifically: after a control opens a dialog, menu, or new view, keyboard focus must move INTO the new content; after it closes, focus must return to the trigger. Focus that stays on the trigger, is lost to the page body, or jumps to the top is a FAIL. Judge from focusBefore → focusAfter given what the interaction did.",
+  "live-region":
+    "For live regions specifically: when an interaction changes page content the user did not navigate to (domChanged is true) — a status, error, count, or result — that change must be announced via a live region (aria-live / role=status / role=alert). If domChanged is true and `announcement` is empty, screen-reader users miss the update: FAIL. If it was announced, judge whether the announcement is meaningful. If the change was instead handled by moving keyboard focus into new content (focusBefore differs from focusAfter), a live region is not required: PASS.",
 };
 
 export function buildSystemPrompt(concern: string): string {

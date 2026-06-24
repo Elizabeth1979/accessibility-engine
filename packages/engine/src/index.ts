@@ -15,6 +15,7 @@ import {
   formLabelJudge,
   headingStructureJudge,
   linkTextJudge,
+  liveRegionJudge,
 } from "@aee/judges";
 import { captureHtml } from "@aee/playwright";
 import { buildReport } from "@aee/reporter";
@@ -31,6 +32,7 @@ const ROUTES: Record<string, { concern: string; judge: Judge }> = {
   heading: { concern: "heading-structure", judge: headingStructureJudge },
   "form-field": { concern: "form-label", judge: formLabelJudge },
   "focus-change": { concern: "focus-management", judge: focusManagementJudge },
+  "live-region": { concern: "live-region", judge: liveRegionJudge },
 };
 
 /** Best-effort element identity from a payload (naming uses `selector`, dynamic uses `trigger`). */
