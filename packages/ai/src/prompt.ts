@@ -16,6 +16,8 @@ const CONCERN_GUIDANCE: Record<string, string> = {
     "For headings specifically: a heading must describe the content of the section it labels. Generic or positional headings like 'Section 2', 'Heading', or 'Details' are a FAIL — users navigate by a list of headings out of context.",
   "form-label":
     "For form fields specifically: every input needs a programmatically associated label. A placeholder is NOT a label (it disappears on input and is unreliable for assistive tech), so a field labeled only by a placeholder — or with no label at all — is a FAIL.",
+  "focus-management":
+    "For focus management specifically: after a control opens a dialog, menu, or new view, keyboard focus must move INTO the new content; after it closes, focus must return to the trigger. Focus that stays on the trigger, is lost to the page body, or jumps to the top is a FAIL. Judge from focusBefore → focusAfter given what the interaction did.",
 };
 
 export function buildSystemPrompt(concern: string): string {

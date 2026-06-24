@@ -1,16 +1,17 @@
 import { createAIClient } from "@aee/ai";
 import type {
   AIClient,
+  ElementRef,
   EvidenceRecord,
   Intent,
   Judge,
-  NamingPayload,
   Report,
   Verdict,
 } from "@aee/core";
 import {
   accessibleNameJudge,
   altTextJudge,
+  focusManagementJudge,
   formLabelJudge,
   headingStructureJudge,
   linkTextJudge,
@@ -23,13 +24,26 @@ import { buildReport } from "@aee/reporter";
  * the composition the dependency graph forbids elsewhere: only @aee/engine may reach
  * both a driver (via @aee/playwright) and the judges. @aee/ai still sees evidence only.
  */
-const ROUTES: Record<NamingPayload["kind"], { concern: string; judge: Judge }> = {
+const ROUTES: Record<string, { concern: string; judge: Judge }> = {
   image: { concern: "alt-text", judge: altTextJudge },
   "icon-button": { concern: "accessible-name", judge: accessibleNameJudge },
   link: { concern: "link-text", judge: linkTextJudge },
   heading: { concern: "heading-structure", judge: headingStructureJudge },
   "form-field": { concern: "form-label", judge: formLabelJudge },
+  "focus-change": { concern: "focus-management", judge: focusManagementJudge },
 };
+
+/** Best-effort element identity from a payload (naming uses `selector`, dynamic uses `trigger`). */
+function elementTarget(payload: Record<string, unknown>, kind: string): ElementRef {
+  const selector =
+    typeof payload.selector === "string"
+      ? payload.selector
+      : typeof payload.trigger === "string"
+        ? payload.trigger
+        : undefined;
+  const name = typeof payload.accessibleName === "string" ? payload.accessibleName : undefined;
+  return { selector, role: kind, name };
+}
 
 /**
  * Judge captured evidence per element: each record is routed by its kind to the
@@ -43,19 +57,16 @@ export async function judgeEvidence(
 ): Promise<Verdict[]> {
   const verdicts: Verdict[] = [];
   for (const record of evidence) {
-    const payload = (record.after as Partial<NamingPayload> | null) ?? undefined;
-    const route = payload?.kind ? ROUTES[payload.kind] : undefined;
-    if (!route || !payload) continue;
+    const payload =
+      record.after && typeof record.after === "object"
+        ? (record.after as Record<string, unknown>)
+        : undefined;
+    const kind = payload && typeof payload.kind === "string" ? payload.kind : undefined;
+    const route = kind ? ROUTES[kind] : undefined;
+    if (!route || !payload || !kind) continue;
     const verdict = await route.judge.judge([record], ai, { concern: route.concern, intent });
     // Attach the element this verdict is about, so the report and FixPlans can target it.
-    verdicts.push({
-      ...verdict,
-      target: {
-        selector: payload.selector,
-        role: payload.kind,
-        name: payload.accessibleName ?? undefined,
-      },
-    });
+    verdicts.push({ ...verdict, target: elementTarget(payload, kind) });
   }
   return verdicts;
 }

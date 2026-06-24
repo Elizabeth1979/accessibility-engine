@@ -1,5 +1,12 @@
 import { existsSync } from "node:fs";
-import type { EvidenceRecord, Intent, Interaction, Observer } from "@aee/core";
+import {
+  type EvidenceRecord,
+  type FocusPayload,
+  type Intent,
+  type Interaction,
+  type Observer,
+  SCHEMA_VERSION,
+} from "@aee/core";
 import { createNamingObserver, groundingObservers } from "@aee/observers";
 import { type Page, chromium } from "@playwright/test";
 import { createClock } from "./clock.js";
@@ -64,6 +71,66 @@ export async function captureHtml(
   } finally {
     await browser.close();
   }
+}
+
+/**
+ * Capture a single interaction's focus behaviour: focus the trigger, activate it, and
+ * record where focus lands plus any live-region announcement. The result is a
+ * "focus-change" record the engine routes to the focus-management concern (Tier 3).
+ */
+export async function captureInteraction(
+  html: string,
+  opts: { trigger: string; name?: string; intent?: Intent },
+): Promise<EvidenceRecord[]> {
+  const browser = await chromium.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "load" });
+    const driver = new PlaywrightDriver(page);
+    const clock = createClock();
+
+    await page.focus(opts.trigger).catch(() => {});
+    const focusBefore = await driver.focusedElement();
+    await page.click(opts.trigger);
+    await page.waitForTimeout(80); // let focus / DOM settle after the activation
+    const focusAfter = await driver.focusedElement();
+    const announcement =
+      (await driver.eval<string>(`(${readAnnouncement.toString()})()`)) || undefined;
+
+    interactionCounter += 1;
+    const after: FocusPayload = {
+      kind: "focus-change",
+      trigger: opts.trigger,
+      focusBefore,
+      focusAfter,
+      announcement,
+    };
+    return [
+      {
+        schemaVersion: SCHEMA_VERSION,
+        interactionId: `${opts.name ?? "interaction"}-${interactionCounter}`,
+        at: clock.now(),
+        observer: "interaction",
+        before: { focused: focusBefore },
+        after,
+        changes: [],
+        confidence: "high",
+        source: "observed",
+      },
+    ];
+  } finally {
+    await browser.close();
+  }
+}
+
+// Runs in the browser (serialized via toString). Reads what assistive tech would announce.
+function readAnnouncement(): string {
+  const regions = document.querySelectorAll("[aria-live], [role=alert], [role=status]");
+  let text = "";
+  regions.forEach((region) => {
+    text += ` ${region.textContent ?? ""}`;
+  });
+  return text.replace(/\s+/g, " ").trim();
 }
 
 /** Whether a Chromium binary is available, so callers/tests can skip when it isn't. */

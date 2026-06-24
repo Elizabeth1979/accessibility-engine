@@ -6,6 +6,7 @@ export { PlaywrightDriver, artifactRef } from "./driver.js";
 export { createClock } from "./clock.js";
 export {
   captureHtml,
+  captureInteraction,
   chromiumAvailable,
   collectEvidence,
   defaultCaptureObservers,

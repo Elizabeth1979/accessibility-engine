@@ -71,6 +71,20 @@ export const zNamingPayload = z.object({
 });
 export type NamingPayload = z.infer<typeof zNamingPayload>;
 
+/**
+ * Dynamic (Tier 3) evidence: what happened to keyboard focus when a control was
+ * activated, plus any live-region announcement. Judged for focus management — did
+ * focus move sensibly (into a dialog, back to the trigger) or get lost.
+ */
+export const zFocusPayload = z.object({
+  kind: z.literal("focus-change"),
+  trigger: z.string(),
+  focusBefore: z.string().nullable(),
+  focusAfter: z.string().nullable(),
+  announcement: z.string().optional(),
+});
+export type FocusPayload = z.infer<typeof zFocusPayload>;
+
 export const zInteractionType = z.enum([
   "tab",
   "shift-tab",

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { NAMING_FIXTURES, createAIClient, fixedModel } from "@aee/ai";
 import { type EvidenceRecord, SCHEMA_VERSION } from "@aee/core";
-import { chromiumAvailable } from "@aee/playwright";
+import { captureInteraction, chromiumAvailable } from "@aee/playwright";
 import { investigate, judgeEvidence } from "./index.js";
 
 // Deterministic: routing + per-element judging, no browser and no real model.
@@ -85,4 +85,51 @@ test("investigate: live HTML -> a multi-concern report on the local model", { sk
   );
   assert.ok(run.report.findings.some((v) => v.target?.selector), "findings carry the element selector");
   assert.match(run.id, /^run-/);
+});
+
+test("judgeEvidence routes a focus-change record to the focus-management concern", async () => {
+  const ai = createAIClient({
+    model: fixedModel({
+      verdict: "FAIL",
+      confidence: "high",
+      reason: "focus stayed on the trigger after opening a dialog",
+      suggestedFix: "move focus into the dialog",
+    }),
+  });
+  const record: EvidenceRecord = {
+    schemaVersion: SCHEMA_VERSION,
+    interactionId: "i1",
+    at: 0,
+    observer: "interaction",
+    before: null,
+    after: { kind: "focus-change", trigger: "#open", focusBefore: "#open", focusAfter: "#open" },
+    changes: [],
+    confidence: "high",
+    source: "observed",
+  };
+  const verdicts = await judgeEvidence([record], ai);
+  assert.equal(verdicts.length, 1);
+  assert.equal(verdicts[0]?.status, "FAIL");
+  assert.equal(verdicts[0]?.target?.selector, "#open"); // selector falls back to the trigger
+});
+
+const DIALOG_NO_FOCUS = `
+  <main>
+    <button id="open" onclick="document.getElementById('dlg').hidden = false">Open settings</button>
+    <div id="dlg" role="dialog" aria-label="Settings" hidden>
+      <p>Settings</p><button>Close</button>
+    </div>
+  </main>`;
+
+test("captureInteraction: focus that does not move into the opened dialog is caught (local model)", { skip }, async () => {
+  const evidence = await captureInteraction(DIALOG_NO_FOCUS, { trigger: "#open" });
+  assert.equal(evidence.length, 1);
+  const after = evidence[0]?.after as { kind: string; focusAfter: string | null };
+  assert.equal(after.kind, "focus-change");
+  assert.equal(after.focusAfter, "#open"); // the bug: focus stayed on the trigger
+
+  const verdicts = await judgeEvidence(evidence, createAIClient({ provider: "local" }));
+  assert.equal(verdicts.length, 1);
+  assert.notEqual(verdicts[0]?.status, "PASS");
+  assert.ok((verdicts[0]?.suggestedFix ?? "").length > 0);
 });
