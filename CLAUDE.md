@@ -16,4 +16,4 @@ AI-first accessibility testing: AI elevates each check from "is the attribute pr
 
 - TypeScript ESM, NodeNext resolution, `.js` import extensions, `zod` as the single schema source of truth (types via `z.infer`).
 - Plans and docs: clean reflowable markdown (no hard-wrapped "bricks", no changelog sections), committed in-repo.
-- Commit only when asked. This is a local-only repo with no remote; commits land on `main`.
+- Commit and push only when asked. The repo has a GitHub remote (`origin` → github.com/Elizabeth1979/accessibility-engine, public); commits land on `main`.
