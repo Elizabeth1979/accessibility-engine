@@ -372,3 +372,16 @@ test("captureVision: text baked into an image is caught by a vision model", { sk
   const verdicts = await judgeEvidence(evidence, ai);
   assert.notEqual(verdicts[0]?.status, "PASS"); // text baked into the image is not a PASS
 });
+
+// Deterministic: the judge boundary validates evidence and drops anything malformed.
+test("judgeRun drops malformed evidence at the boundary (no bogus verdict, no crash)", async () => {
+  const ai = createAIClient({
+    model: fixedModel({ verdict: "FAIL", confidence: "high", reason: "generic", suggestedFix: "better" }),
+  });
+  const good = NAMING_FIXTURES.find((f) => f.label.includes("meaningless"))?.evidence[0];
+  assert.ok(good);
+  const malformed = { ...good, after: { kind: "mystery", junk: true } } as unknown as EvidenceRecord;
+  const report = await judgeRun([good, malformed], ai);
+  assert.equal(report.summary.total, 1); // only the well-formed record is judged
+  assert.equal(report.findings[0]?.status, "FAIL");
+});

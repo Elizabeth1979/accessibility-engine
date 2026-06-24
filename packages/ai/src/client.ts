@@ -110,11 +110,25 @@ export class ConcernAIClient implements AIClient {
       };
     }
     const images = collectImages(evidence);
-    const assessment = await this.#model.assess(
-      buildSystemPrompt(concern),
-      buildUserPrompt(evidence.map(stripImage), intent),
-      images.length > 0 ? images : undefined,
-    );
+    let assessment: Assessment;
+    try {
+      assessment = await this.#model.assess(
+        buildSystemPrompt(concern),
+        buildUserPrompt(evidence.map(stripImage), intent),
+        images.length > 0 ? images : undefined,
+      );
+    } catch (err) {
+      // AI boundary: a thrown or malformed model response degrades to advisory UNKNOWN —
+      // never a crash, never a guessed PASS.
+      return {
+        schemaVersion: SCHEMA_VERSION,
+        verdict: "UNKNOWN",
+        reliability: "advisory",
+        confidence: "low",
+        reason: `Model assessment failed or was malformed: ${err instanceof Error ? err.message : String(err)}`,
+        evidenceRefs: uniqueRefs(evidence),
+      };
+    }
     // Tier 5 concerns are advisory no matter the client default — the guard then blocks a PASS.
     const reliability = ADVISORY_CONCERNS.has(concern) ? "advisory" : this.#reliability;
     return toJudgment(assessment, evidence, reliability);

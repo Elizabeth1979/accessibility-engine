@@ -115,6 +115,24 @@ test("Tier 5 caption-accuracy is advisory: a model PASS is downgraded to UNKNOWN
   assert.equal(verdict.verdict, "UNKNOWN");
 });
 
+test("a model that throws degrades to advisory UNKNOWN (AI boundary — never a crash or PASS)", async () => {
+  const ai = createAIClient({
+    model: {
+      name: "boom",
+      assess: async () => {
+        throw new Error("model exploded");
+      },
+      answer: async () => "",
+    },
+  });
+  const fixture = NAMING_FIXTURES.find((f) => f.label.includes("icon button"));
+  assert.ok(fixture);
+  const verdict = await ai.judge("accessible-name", fixture.evidence);
+  assert.equal(verdict.verdict, "UNKNOWN");
+  assert.equal(verdict.reliability, "advisory");
+  assert.match(verdict.reason, /failed or was malformed/i);
+});
+
 test("authoritative concerns keep a confident PASS (e.g. alt-text)", async () => {
   const ai = createAIClient({
     model: fixedModel({ verdict: "PASS", confidence: "high", reason: "alt conveys the image" }),

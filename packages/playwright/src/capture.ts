@@ -10,6 +10,7 @@ import {
   type Observer,
   type VisionPayload,
   SCHEMA_VERSION,
+  isValidEvidenceRecord,
 } from "@aee/core";
 import { createNamingObserver, groundingObservers } from "@aee/observers";
 import axe from "axe-core";
@@ -45,7 +46,9 @@ export async function collectEvidence(
     try {
       await observer.init(ctx);
       await observer.beforeInteraction(interaction);
-      records.push(...(await observer.collect(interaction, evidenceWindow)));
+      // Observer boundary: keep only records that satisfy the schema, so a buggy observer
+      // emitting a malformed record contributes nothing rather than polluting the evidence.
+      records.push(...(await observer.collect(interaction, evidenceWindow)).filter(isValidEvidenceRecord));
     } catch {
       // observer isolation: no evidence on failure, never a crash
     } finally {

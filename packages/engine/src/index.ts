@@ -10,6 +10,7 @@ import type {
   Severity,
   Verdict,
 } from "@aee/core";
+import { isValidEvidenceRecord } from "@aee/core";
 import {
   accessibleNameJudge,
   altTextJudge,
@@ -157,8 +158,11 @@ export function axeVerdicts(evidence: EvidenceRecord[]): Verdict[] {
  * records, composed with the deterministic axe floor for "axe" records.
  */
 export async function judgeRun(evidence: EvidenceRecord[], ai: AIClient, intent?: Intent): Promise<Report> {
-  const axe = evidence.filter((e) => (e.after as { kind?: string } | null)?.kind === "axe");
-  const judged = evidence.filter((e) => (e.after as { kind?: string } | null)?.kind !== "axe");
+  // Judge boundary: validate incoming evidence and drop anything malformed before judging, so a
+  // bad record degrades to "no verdict" rather than producing a bogus one or crashing the run.
+  const valid = evidence.filter(isValidEvidenceRecord);
+  const axe = valid.filter((e) => (e.after as { kind?: string } | null)?.kind === "axe");
+  const judged = valid.filter((e) => (e.after as { kind?: string } | null)?.kind !== "axe");
   return buildReport([...(await judgeEvidence(judged, ai, intent)), ...axeVerdicts(axe)]);
 }
 

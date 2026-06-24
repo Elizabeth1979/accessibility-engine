@@ -192,6 +192,31 @@ export const zEvidenceRecord = z.object({
 });
 export type EvidenceRecord = z.infer<typeof zEvidenceRecord>;
 
+/** The set of payloads an EvidenceRecord's `after` may hold — the recognised evidence kinds. */
+export const zEvidencePayload = z.union([
+  zNamingPayload,
+  zFocusPayload,
+  zLiveRegionPayload,
+  zKeyboardPayload,
+  zVisionPayload,
+  zAxePayload,
+  zGroundingPayload,
+  zScreenReaderPayload,
+]);
+export type EvidencePayload = z.infer<typeof zEvidencePayload>;
+
+/** An EvidenceRecord whose `after` is a recognised payload — the contract checked at boundaries. */
+export const zValidatedEvidenceRecord = zEvidenceRecord.extend({ after: zEvidencePayload });
+
+/**
+ * True when a record satisfies the envelope and a known payload. The observer-output and
+ * engine-judge boundaries use this to DROP malformed evidence gracefully: no evidence becomes
+ * UNKNOWN downstream, never a crash and never a guessed PASS.
+ */
+export function isValidEvidenceRecord(record: unknown): record is EvidenceRecord {
+  return zValidatedEvidenceRecord.safeParse(record).success;
+}
+
 /** Produced by @aee/ai from evidence ONLY. */
 export const zAIJudgment = z.object({
   schemaVersion: z.string(),
