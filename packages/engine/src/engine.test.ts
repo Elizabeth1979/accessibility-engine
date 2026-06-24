@@ -210,16 +210,15 @@ test("captureVision captures an element screenshot as base64", {
   assert.ok(after.screenshot.length > 100); // a real base64 PNG
 });
 
-// Vision judging needs a vision-capable model. Gated on AEE_VISION_MODEL (a local vision
-// model, e.g. llava) so it skips until one is configured — gemma4:e4b is text-only.
+// Vision judging runs on a vision-capable local model. gemma4:e4b is multimodal, so the
+// default local provider works (set AEE_VISION_MODEL to override). Gated on Chromium + a
+// reachable local server, like the other live tests.
 const visionModel = process.env.AEE_VISION_MODEL;
 const visionSkip: false | string = !chromiumAvailable()
   ? "no Chromium browser available"
-  : !visionModel
-    ? "AEE_VISION_MODEL not set"
-    : (await localModelReachable())
-      ? false
-      : "no local model server reachable";
+  : (await localModelReachable())
+    ? false
+    : "no local model server reachable";
 
 test("captureVision: color-only information is caught by a vision model", { skip: visionSkip }, async () => {
   const evidence = await captureVision(COLOR_ONLY, {
@@ -229,5 +228,19 @@ test("captureVision: color-only information is caught by a vision model", { skip
   });
   const ai = createAIClient({ provider: "local", local: { model: visionModel } });
   const verdicts = await judgeEvidence(evidence, ai);
-  assert.notEqual(verdicts[0]?.status, "PASS");
+  assert.notEqual(verdicts[0]?.status, "PASS"); // colour-only is not a PASS
+});
+
+const NO_FOCUS_RING = `<main><button id="go" style="outline:none;border:none;background:#eee;padding:8px">Go</button></main>`;
+
+test("captureVision: a removed focus indicator is caught by a vision model", { skip: visionSkip }, async () => {
+  const evidence = await captureVision(NO_FOCUS_RING, {
+    selector: "#go",
+    kind: "focus-visible",
+    focus: true,
+    context: "the button is keyboard-focused; its outline was removed",
+  });
+  const ai = createAIClient({ provider: "local", local: { model: visionModel } });
+  const verdicts = await judgeEvidence(evidence, ai);
+  assert.notEqual(verdicts[0]?.status, "PASS"); // no visible focus indicator is not a PASS
 });
