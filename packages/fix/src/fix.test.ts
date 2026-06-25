@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Verdict } from "@aee/core";
-import { applyFix, applyFixes, dryRun, planFix, planFixes, proposePr } from "./index.js";
+import {
+  applyFix,
+  applyFixToJsx,
+  applyFixToSource,
+  applyFixes,
+  dryRun,
+  planFix,
+  planFixes,
+  proposePr,
+} from "./index.js";
 
 const fail = (extra: Partial<Verdict>): Verdict => ({
   status: "FAIL",
@@ -115,4 +124,53 @@ test("applyFixes applies multiple plans to one source", () => {
   assert.equal(results.filter((r) => r.applied).length, 2);
   assert.match(source, /alt="Red coat"/);
   assert.match(source, /aria-label="Open cart"/);
+});
+
+// Framework-aware apply_fix (Future item 2): patch JSX/TSX source via a real parse, never a blind regex.
+const ICON_BUTTON_PLAN = () =>
+  planFix(fail({ suggestedFix: "Open cart drawer", target: { selector: "#cart", role: "icon-button", name: "button" } }))!;
+
+test("applyFixToJsx patches a string attribute on a JSX component (by id, via AST)", () => {
+  const src = `export const Cart = () => <IconButton id="cart" aria-label="button" onClick={open} />;`;
+  const r = applyFixToJsx(ICON_BUTTON_PLAN(), src);
+  assert.equal(r.applied, true);
+  assert.match(r.source, /aria-label="Open cart drawer"/);
+  assert.ok(!r.source.includes('aria-label="button"'));
+  assert.ok(r.source.includes("onClick={open}")); // surrounding JSX untouched
+});
+
+test("applyFixToJsx declines a dynamic JSX expression value (never corrupts source)", () => {
+  const src = `<IconButton id="cart" aria-label={label} />`;
+  const r = applyFixToJsx(ICON_BUTTON_PLAN(), src);
+  assert.equal(r.applied, false);
+  assert.match(r.detail, /dynamic JSX expression/);
+  assert.equal(r.source, src); // unchanged — no duplicate attribute, no corruption
+});
+
+test("applyFixToJsx inserts a missing attribute on a JSX element", () => {
+  const plan = planFix(
+    fail({ suggestedFix: "Save changes", target: { selector: "#save", role: "icon-button", name: "button" } }),
+  )!;
+  const r = applyFixToJsx(plan, `<button id="save" onClick={save}>Save</button>`);
+  assert.equal(r.applied, true);
+  assert.match(r.source, /aria-label="Save changes"/);
+});
+
+test("applyFixToJsx matches by the current value when there is no id, and declines ambiguity", () => {
+  const noId = planFix(
+    fail({ suggestedFix: "Open cart drawer", target: { selector: "button.icon", role: "icon-button", name: "button" } }),
+  )!;
+  const r1 = applyFixToJsx(noId, `<button className="icon" aria-label="button">🛒</button>`);
+  assert.equal(r1.applied, true);
+  assert.match(r1.source, /aria-label="Open cart drawer"/);
+
+  const ambiguous = planFix(fail({ suggestedFix: "Open cart drawer", target: { role: "icon-button", name: "button" } }))!;
+  const r2 = applyFixToJsx(ambiguous, `<><button aria-label="button" /><button aria-label="button" /></>`);
+  assert.equal(r2.applied, false);
+  assert.match(r2.detail, /[Aa]mbiguous/);
+});
+
+test("applyFixToSource routes JSX through the AST patcher and HTML through the regex patcher", () => {
+  assert.match(applyFixToSource(ICON_BUTTON_PLAN(), `<IconButton id="cart" aria-label="button" />`).source, /aria-label="Open cart drawer"/);
+  assert.match(applyFixToSource(ICON_BUTTON_PLAN(), `<button id="cart" aria-label="button"></button>`).source, /aria-label="Open cart drawer"/);
 });

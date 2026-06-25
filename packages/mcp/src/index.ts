@@ -19,7 +19,7 @@ export const AEE_MCP_TOOLS: McpToolSpec[] = [
   { name: "evidence", description: "Fetch the evidence records behind a run; defaults to the latest." },
   { name: "explain", description: "Ask a grounded question about a run; answered from evidence only." },
   { name: "suggest_fix", description: "Produce FixPlans (a concrete better value) for a run's failing findings." },
-  { name: "apply_fix", description: "Apply a run's fixes to provided source as safe attribute edits and return the patched source; non-attribute fixes are reported for manual handling." },
+  { name: "apply_fix", description: "Apply a run's fixes to provided source (HTML or JSX/TSX) as safe attribute edits and return the patched source; non-attribute fixes and anything it can't patch safely are reported for manual handling." },
 ];
 
 export function listTools(): McpToolSpec[] {
@@ -130,7 +130,7 @@ export function createServer(opts: McpServerOptions = {}): McpServer {
     {
       title: "Apply fix",
       description:
-        "Apply a run's fixes to provided source HTML (attribute edits on #id-located elements) and return the patched source. Text/label and non-id fixes are reported for manual handling.",
+        "Apply a run's fixes to provided source — HTML (regex) or JSX/TSX (parsed) — and return the patched source. JSX is located by a real parse, so dynamic-expression attributes are declined rather than corrupted. Text/label and anything it can't patch safely are reported for manual handling.",
       inputSchema: { source: z.string(), runId: z.string().optional() },
     },
     async ({ source, runId }) => {

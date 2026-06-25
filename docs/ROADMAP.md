@@ -57,8 +57,8 @@ The phased plan (A–F) is fully implemented, and a follow-up hardening pass clo
 
 - **Engine + investigate** — `@aee/engine` captures, routes each evidence record to its concern's judge, composes the deterministic axe floor with AI quality, and returns a stored `Report`. `investigate` accepts HTML or a URL.
 - **Agent surface** — `@aee/mcp` runs over real `@modelcontextprotocol/sdk` stdio with six tools (investigate, findings, evidence, explain, suggest_fix, apply_fix); `@aee/triage` is a local "chat with your report" shell.
-- **Remediation** — `@aee/fix` turns a suggested fix into a targeted `FixPlan`, applies attribute edits to source, and scaffolds a `gh` PR. Framework-aware source mapping is deferred.
-- **Tiers 2–3** — element-screenshot vision (color-alone, focus-visible, text-in-images) on a multimodal local model, plus dynamic capture (focus-management, live-region, keyboard-operable).
+- **Remediation** — `@aee/fix` turns a suggested fix into a targeted `FixPlan`, applies attribute edits to **HTML or JSX/TSX** source (the latter via a real parse, so a dynamic-expression attribute is declined rather than corrupted), and scaffolds a `gh` PR.
+- **Tiers 2–3** — element-screenshot vision (color-alone, focus-visible, text-in-images) on a multimodal local model, plus dynamic capture (focus-management, live-region, keyboard-operable, and network-error — a failed request never announced to assistive tech).
 - **Floor + advisory** — Tier 4 via the axe-core floor; Tier 5 caption-accuracy is advisory and can never certify `PASS`.
 - **Grounding + integrity** — real DOM and accessibility-tree observers, an opt-in virtual-screen-reader observer, a content-addressed artifact store (screenshots by reference, optionally disk-backed), and runtime schema validation at the observer / AI / judge boundaries.
 - **Persistence & DX** — opt-in disk persistence (`AEE_STORE_DIR`) so runs and their artifacts survive across processes (investigate in one MCP session, query findings/evidence/explain in another); a runnable `pnpm demo`; and CI green on every push.
@@ -67,8 +67,8 @@ The phased plan (A–F) is fully implemented, and a follow-up hardening pass clo
 
 These items are genuinely large or specialized — documented honestly here rather than half-built:
 
-- **Framework-aware source mapping for `apply_fix`.** Today `apply_fix` patches attributes on elements locatable by a stable id/attribute in HTML source. Mapping a rendered-DOM selector back to its origin in JSX/TSX or a component library means parsing the framework's source and tracking the render → DOM relationship — effectively a per-framework adapter. Large, and best driven by a concrete target codebase.
-- **Capture AEE doesn't yet have.** Network (CDP request/response correlation) for Tier-3 error and async checks; audio extraction so Tier-5 caption-accuracy can be judged against the soundtrack rather than only flagged advisory; and a real OS-level screen reader (VoiceOver / NVDA via `@guidepup`) for the highest-fidelity announcement checks. Each is its own capture pipeline; the virtual screen reader covers the CI-safe middle ground today.
+- **Deeper `apply_fix` source mapping.** `apply_fix` now patches HTML and JSX/TSX — string attributes, located by id or current value, parsed rather than regexed. Still ahead: patching *inside* expressions, rewiring a component's props, multi-file resolution, and mapping a purely structural DOM selector (no stable attribute) back to source — which needs a build-time source map, not just a parse.
+- **Capture AEE doesn't yet have.** Audio extraction so Tier-5 caption-accuracy can be judged against the soundtrack rather than only flagged advisory; and a real OS-level screen reader (VoiceOver / NVDA via `@guidepup`) for the highest-fidelity announcement checks. Each is its own capture pipeline; the virtual screen reader covers the CI-safe middle ground today.
 - **A fuller `@aee/triage` UI.** The local "chat with your report" surface is a thin shell over `@aee/ai.explain`; a real web app (framework, evidence viewer, in-place fix-apply) is a separate front-end effort — intentionally late, as the most design-dependent piece.
 
 ## Reuse

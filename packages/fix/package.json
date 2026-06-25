@@ -10,13 +10,17 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b",
     "pretest": "tsc -b",
     "test": "node --test dist"
   },
   "dependencies": {
-    "@aee/core": "workspace:*"
+    "@aee/core": "workspace:*",
+    "@babel/parser": "^8.0.0",
+    "@babel/types": "^8.0.0"
   }
 }
