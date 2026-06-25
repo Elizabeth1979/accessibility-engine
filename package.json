@@ -15,7 +15,8 @@
     "clean": "tsc -b --clean",
     "test": "pnpm build && node --test \"packages/*/dist/**/*.test.js\" \"tests/*.test.js\"",
     "gen:schemas": "pnpm build && node packages/core/dist/gen-schemas.js",
-    "demo": "pnpm build && node scripts/demo.mjs"
+    "demo": "pnpm build && node scripts/demo.mjs",
+    "triage": "pnpm build && node packages/triage/dist/bin.js"
   },
   "devDependencies": {
     "@aee/ai": "workspace:*",

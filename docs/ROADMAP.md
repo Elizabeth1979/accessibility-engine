@@ -56,7 +56,7 @@ Tier 1 proved the thesis: AI elevates each check from "is the attribute present?
 The phased plan (A–F) is fully implemented, and a follow-up hardening pass closed the gaps between this roadmap and the architecture plan:
 
 - **Engine + investigate** — `@aee/engine` captures, routes each evidence record to its concern's judge, composes the deterministic axe floor with AI quality, and returns a stored `Report`. `investigate` accepts HTML or a URL.
-- **Agent surface** — `@aee/mcp` runs over real `@modelcontextprotocol/sdk` stdio with six tools (investigate, findings, evidence, explain, suggest_fix, apply_fix); `@aee/triage` is a local "chat with your report" shell.
+- **Agent surface** — `@aee/mcp` runs over real `@modelcontextprotocol/sdk` stdio with six tools (investigate, findings, evidence, explain, suggest_fix, apply_fix); `@aee/triage` (`pnpm triage` / `aee-triage`) is a local web app that loads a persisted run and renders it as accessible HTML with a grounded chat.
 - **Remediation** — `@aee/fix` turns a suggested fix into a targeted `FixPlan`, applies attribute edits to **HTML or JSX/TSX** source (the latter via a real parse, so a dynamic-expression attribute is declined rather than corrupted), and scaffolds a `gh` PR.
 - **Tiers 2–3** — element-screenshot vision (color-alone, focus-visible, text-in-images) on a multimodal local model, plus dynamic capture (focus-management, live-region, keyboard-operable, and network-error — a failed request never announced to assistive tech).
 - **Floor + advisory** — Tier 4 via the axe-core floor; Tier 5 caption-accuracy is advisory and can never certify `PASS`.
@@ -69,7 +69,7 @@ These items are genuinely large or specialized — documented honestly here rath
 
 - **Deeper `apply_fix` source mapping.** `apply_fix` now patches HTML and JSX/TSX — string attributes, located by id or current value, parsed rather than regexed. Still ahead: patching *inside* expressions, rewiring a component's props, multi-file resolution, and mapping a purely structural DOM selector (no stable attribute) back to source — which needs a build-time source map, not just a parse.
 - **Capture AEE doesn't yet have.** Audio extraction so Tier-5 caption-accuracy can be judged against the soundtrack rather than only flagged advisory; and a real OS-level screen reader (VoiceOver / NVDA via `@guidepup`) for the highest-fidelity announcement checks. Each is its own capture pipeline; the virtual screen reader covers the CI-safe middle ground today.
-- **A fuller `@aee/triage` UI.** The local "chat with your report" surface is a thin shell over `@aee/ai.explain`; a real web app (framework, evidence viewer, in-place fix-apply) is a separate front-end effort — intentionally late, as the most design-dependent piece.
+- **A richer triage UI.** The triage web app loads a persisted run and offers a grounded chat today. Still ahead: in-UI apply-fix (needs the user's source file), an evidence browser, and multi-run history/navigation.
 
 ## Reuse
 

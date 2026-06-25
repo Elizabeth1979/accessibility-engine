@@ -56,3 +56,37 @@ export function renderTerminalSummary(report: Report): string {
   }
   return lines.join("\n");
 }
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Render a report as an accessible HTML fragment (no <html>/<body>): a summary line plus one item
+ * per finding with a status badge, the grounded reason, the suggested fix, and the target element.
+ * The status word is always text (never colour alone), so the rendering is itself accessible. Used
+ * by the triage UI; a host page supplies the surrounding document and styling.
+ */
+export function renderReportHtml(report: Report): string {
+  const s = report.summary;
+  const summary = `<p class="summary">${s.total} checked · ${s.pass} pass · ${s.fail} fail · ${s.warn} warn · ${s.unknown} unknown — release: <strong>${escapeHtml(report.release.decision)}</strong></p>`;
+  if (report.findings.length === 0) return `${summary}\n<p>No findings.</p>`;
+  const items = report.findings
+    .map((f) => {
+      const cls = f.status.toLowerCase();
+      const target = f.target?.selector ? ` <code>${escapeHtml(f.target.selector)}</code>` : "";
+      const fix = f.suggestedFix
+        ? `\n  <p class="fix"><strong>Suggested fix:</strong> ${escapeHtml(f.suggestedFix)}</p>`
+        : "";
+      return `<li class="finding ${cls}">
+  <p class="head"><span class="badge ${cls}">${escapeHtml(f.status)}</span>${target}</p>
+  <p class="reason">${escapeHtml(f.reason)}</p>${fix}
+</li>`;
+    })
+    .join("\n");
+  return `${summary}\n<ul class="findings">\n${items}\n</ul>`;
+}

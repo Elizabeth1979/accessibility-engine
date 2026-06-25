@@ -2,13 +2,16 @@
   "name": "@aee/triage",
   "version": "0.0.0",
   "type": "module",
-  "description": "Local conversational 'chat with your report' UI — a thin front-end over @aee/ai.explain().",
+  "description": "Local 'chat with your report' web UI — renders a persisted run and answers grounded questions via @aee/ai.explain().",
   "license": "MIT",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
+  },
+  "bin": {
+    "aee-triage": "./dist/bin.js"
   },
   "files": ["dist"],
   "scripts": {
