@@ -1,5 +1,7 @@
 # Accessibility Evidence Engine — agent guide
 
+**Start here for toolkit work:** `docs/MASTER-PLAN.md` is the plan for consolidating all the accessibility repos into this engine. When asked to "continue the master plan", do the first unchecked step, tick it in the same PR, and log any decision there.
+
 AI-first accessibility testing: AI elevates each check from "is the attribute present?" to "is it correct in context, and here's a better value." Implemented end to end across Tiers 1–5 (naming, vision, dynamic, the axe-core floor, advisory) and verified on a local model; the engine, the agent surfaces (MCP, triage), and remediation (fix) are real. See `docs/ROADMAP.md` for current state and what's next, and `docs/PLAN.md` for the architecture.
 
 ## Frozen invariants (do not break)
