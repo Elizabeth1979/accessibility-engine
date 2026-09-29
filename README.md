@@ -1,5 +1,8 @@
 # Accessibility Evidence Engine (AEE)
 
+> [!IMPORTANT]
+> **Archived.** Superseded by [accessibility-evidence-engine](https://github.com/Elizabeth1979/accessibility-evidence-engine). Its AI providers, judge prompts, MCP server and apply-a-fix-to-source live on there as `@aee/ai-fixes`, [`@aee/mcp`](https://github.com/Elizabeth1979/accessibility-evidence-engine#coding-agents-mcp) and `aee fix`. Both projects were called Accessibility Evidence Engine; that one is the one in use. This repository is read-only and kept for its history.
+
 [![CI](https://github.com/Elizabeth1979/accessibility-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/Elizabeth1979/accessibility-engine/actions/workflows/ci.yml)
 
 **AI-first accessibility testing that augments your existing Playwright tests.**
